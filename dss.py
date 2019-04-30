@@ -15,7 +15,8 @@ sysexGet = {'mode'       : [0xF0, 0x42, 0x30, 0x0B, 0x12, 0xF7],
 
 sysexSet = {'playmode': [0xF0, 0x42, 0x30, 0x0B, 0x13, 0xF7],
             'parameter': [0xF0, 0x42, 0x30, 0x0B, 0x41, 'parameter', 'value', 0xF7],
-            'parameters': [0xF0, 0x42, 0x30, 0x0B, 0x40, 'parameters', 'name', 0xF7]}
+            'parameters': [0xF0, 0x42, 0x30, 0x0B, 0x40, 'parameters', 'name', 0xF7],
+            'writeprogram': [0xF0, 0x42, 0x30, 0x0B, 0x11, 'program', 0xF7]}
 
 
 class DSS():
@@ -114,12 +115,8 @@ class DSS():
         midi.sendSysex(self.output, sysexGet['mode'])
         received, sysex = midi.getSysex(self.input)
         if received:
-            if sysex[1] != korgID:
-                return
-            if sysex[3] != dss1ID:
-                return
-          
-            self.mode = sysex[5]
+            if sysex[0:5] == [0xF0, 0x42, 0x30, 0x0B, 0x42]:
+                self.mode = sysex[5]
     
     #Sets the mode to playmode
     def setPlayMode(self):
@@ -167,9 +164,15 @@ class DSS():
                         sysex.pop(0)
                         sysex.pop(0)
 
-    #Sets the parameters to the ones in the controller, and assigns it a name
-    def setParameters(self, program):
-        midi.sendSysex(self.output, sysexSet['writeprogram'])
+    #Saves the loaded values into a program on the DSS1
+    def saveProgram(self, program):
+        #Getting the sysex command
+        sysex = sysexSet['writeprogram'].copy()
+
+        #Replacing the pointer with the program
+        sysex[sysex.index('program')] = program
+
+        midi.sendSysex(self.output, sysex)
 
     def setParameter(self, parameter, value):
         #Get sysex command
@@ -181,13 +184,11 @@ class DSS():
         valueIndex = sysex.index('value')
 
         if parameter == 46 or parameter == 52:
-            sysex[valueIndex] = value%127
-            sysex.insert(valueIndex, value//127)
+            sysex[valueIndex] = value%128
+            sysex.insert(valueIndex, value//128)
         else:
             sysex[valueIndex] = value
         
-            
-
         #Sending the sysex request to the DSS-1
         midi.sendSysex(self.output, sysex)
 
