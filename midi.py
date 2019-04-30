@@ -25,14 +25,15 @@ def getMidiInputDevice(id):
 def getMidiOutputDevice(id):
     return midi.Output(id)
     
-    
+def clearMidi(device):
+    device.read(10000)
+
 def receiveMidi(device):
     message = device.read(100)
     return message
 
-    
 def sendSysex(device, message):  
-    device.write_sys_ex(0, message)
+    device.write_sys_ex(0, bytes(message))
     
 def getSysex(device):
     sysex = []
@@ -44,7 +45,7 @@ def getSysex(device):
     
     sysexPresent = False
     for i in range(len(data)):
-        if data[i][0][0] == 240:
+        if data[i][0][0] == 0xF0:
             sysexPresent = True
             sysexId = i
             
@@ -55,7 +56,7 @@ def getSysex(device):
         for u in range(len(data[i][0])):
             sysex.append(data[i][0][u])
             
-            if data[i][0][u] == 247:
+            if data[i][0][u] == 0xF7:
                 return True, sysex
     
     return False, []
