@@ -18,6 +18,8 @@ def getMidiDevices():
     
     return midiInputs, midiOutputs
 
+def getDeviceInfo(id):
+    print(midi.get_device_info(id))
 
 def getMidiInputDevice(id):
     return midi.Input(id)
@@ -61,21 +63,3 @@ def getSysex(device):
     
     return False, []
     
-'''
-print(getMidiDevices())
-
-dIn  = getMidiInputDevice(2)
-dOut = getMidiOutputDevice(5)
-
-#[0xF0,0x42,0x30,0x0B,0x40,0x00,0xF7]
-#mesg = [chr(0xF0), chr(0x42), chr(0x30), chr(0x0B), chr(0x40), chr(0x01), chr(0xF7)]
-#mesg = b"\xF0\x42\x30\x0B\x40\x00\xF7"
-mesg = b'\xF0\x42\x30\x0B\x12\xF7'
-
-sendSysex(dOut, mesg)
-
-while True:
-    input('')
-    
-    receiveMidi(dIn)
-'''

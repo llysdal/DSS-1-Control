@@ -3,26 +3,15 @@ import os
 
 curDir = os.path.dirname(os.path.abspath(__file__))
 
-def updateTask():
-    
-
-    #EG Curves    
-    app.egCanvas(app.egfc, (app.egfa, app.egfd, app.egfb, app.egfsl, app.egfs, app.egfr))
-    app.egCanvas(app.egvc, (app.egva, app.egvd, app.egvb, app.egvsl, app.egvs, app.egvr))
-
-    print(app.getValues())
-
-    app.after(10, updateTask)
-
 class Application(Frame):
     def init(self):
         Frame.__init__(self, None)
         self.grid(sticky=N+S+E+W)
 
         #Resizeability
-        top = self.winfo_toplevel()
-        top.rowconfigure(0, weight=1)
-        top.columnconfigure(0, weight=1)
+        self.top = self.winfo_toplevel()
+        self.top.rowconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
 
         self.black = "#212121"
         self.grey  = '#2e2e2e'
@@ -86,6 +75,12 @@ class Application(Frame):
 
         return intvar
 
+    def createMenu(self):
+        menubar = Menu(self)
+        self.top.config(menu=menubar)
+
+        return menubar
+
     def minSizeH(self, pos, width):
         self.columnconfigure(pos, minsize = width)
         
@@ -95,15 +90,19 @@ class Application(Frame):
 class DSS1gui(Application):
     def __init__(self):
         self.init()
+        self.menu = self.createMenu()
         self.setup()
+        self.execcommand = 0
+
 
     def egCanvas(self, canvas, egpar):
-        w,h = 220, 100
+        w,h = 225, 100
+        h2 = 90
         canvas.delete('all')
-        attack = (w/4 * egpar[0].get()/63, 0)
-        decay = (w/4 * egpar[1].get()/63+attack[0], h-h*egpar[2].get()/63)
-        slope = (w/4 * egpar[3].get()/63+decay[0], h-h*egpar[4].get()/63)
-        sustain = (w-w/4 * egpar[5].get()/63, h-h*egpar[4].get()/63)
+        attack = (w/4 * egpar[0].get()/63, h-h2)
+        decay = (w/4 * egpar[1].get()/63+attack[0], h-h2*egpar[2].get()/63)
+        slope = (w/4 * egpar[3].get()/63+decay[0], h-h2*egpar[4].get()/63)
+        sustain = (w-w/4 * egpar[5].get()/63, h-h2*egpar[4].get()/63)
         release = (w, h)
 
         canvas.create_line((0, h, attack[0], attack[1]), fill = '#2b7cff')
@@ -112,19 +111,22 @@ class DSS1gui(Application):
         canvas.create_line((slope[0], slope[1], sustain[0], sustain[1]), fill = '#2b7cff')
         canvas.create_line((sustain[0], sustain[1], release[0], release[1]), fill = '#2b7cff')
         
+    def execCom(self, val):
+        self.execcommand = val
+
     def setValues(self, values):
         self.osc1v.set(values[0])
         self.osc2v.set(values[1])
         self.autoi.set(values[2])
         self.noise.set(values[3])
         self.filterm.set(('12dB','24dB')[values[4]])
-        self.filterinv.set(values[5])
+        self.filterinv.set(1-values[5])
         self.filterc.set(values[6])
         self.filtereg.set(values[7])
         self.filterr.set(values[8])
         self.filterk.set(values[9])
         self.fmgf.set(values[10])
-        self.fmgd.set(values(11))
+        self.fmgd.set(values[11])
         self.fmgi.set(values[12])
         self.egfa.set(values[13])
         self.egfd.set(values[14])
@@ -132,7 +134,7 @@ class DSS1gui(Application):
         self.egfsl.set(values[16])
         self.egfs.set(values[17])
         self.egfr.set(values[18])
-        self.vcad.set((values[19], 64-values[19])[values[19] < 63])
+        self.vcad.set((values[19], 64-values[19])[values[19] > 63])
         self.vcal.set(values[20])
         self.egva.set(values[21])
         self.egvd.set(values[22])
@@ -151,7 +153,7 @@ class DSS1gui(Application):
         self.velvs.set(values[35])
         self.aftmgi.set(values[36])
         self.aftf.set(values[37])
-        self.aftfm.set(('Cutoff', 'MG Int')[values[38]])
+        self.aftfm.set(('MG Int', 'Cutoff')[values[38]])
         self.aftvl.set(values[39])
         self.joyr.set(values[40])
         self.joyf.set(values[41])
@@ -173,22 +175,22 @@ class DSS1gui(Application):
         self.d2mi.set(values[57])
         self.osc1w.set(values[58])
         self.osc2w.set(values[59])
-        self.osc2s.set(values[60])
-        self.oscres.set(('6 bits', '7 bits', '8 bits', '10 bits', '12 bits')[values[61]])
-        self.osc1o.set((16,8,4)[values[62]])
-        self.osc2o.set((16,8,4)[values[63]])
-        self.osc2d.set(values[64])
-        self.osc2i.set(values[65])
-        self.omgm.set(('None', 'Osc1', 'Osc2', 'Both')[values[66]])
-        self.omgf.set(values[67])
-        self.omgi.set(values[68])
-        self.omgd.set(values[69])
-        self.autom.set(('Osc1', 'Osc2', 'Both')[values[70]])
-        self.autop.set(('Up', 'Down')[values[71]])
-        self.autot.set(values[72])
-        self.unid.set(values[73])
-        self.assign.set(('Poly 1', 'Poly 2', 'Unison')[values[74]])
-        self.unia.set((1,2,4,8)[values[75]])
+        self.osc2s.set(values[61])
+        self.oscres.set(('6 bits', '7 bits', '8 bits', '10 bits', '12 bits')[values[62]])
+        self.osc1o.set((16,8,4)[values[63]])
+        self.osc2o.set((16,8,4)[values[64]])
+        self.osc2d.set(values[65])
+        self.osc2i.set(values[66])
+        self.omgm.set(('Off', 'Osc1', 'Osc2', 'Both')[values[67]])
+        self.omgf.set(values[68])
+        self.omgi.set(values[69])
+        self.omgd.set(values[70])
+        self.autom.set(('Off', 'Osc1', 'Osc2', 'Both')[values[71]])
+        self.autop.set(('Down', 'Up')[values[72]])
+        self.autot.set(values[73])
+        self.unid.set(values[74])
+        self.assign.set(('Poly 1', 'Poly 2', 'Unison')[values[76]])
+        self.unia.set((1,2,4,8)[values[77]])
 
     def getValues(self):
         return (self.osc1v.get(),
@@ -196,7 +198,7 @@ class DSS1gui(Application):
                 self.autoi.get(),
                 self.noise.get(),
                 ('12dB','24dB').index(self.filterm.get()),
-                self.filterinv.get(),
+                1-self.filterinv.get(),
                 self.filterc.get(),
                 self.filtereg.get(),
                 self.filterr.get(),
@@ -229,7 +231,7 @@ class DSS1gui(Application):
                 self.velvs.get(),
                 self.aftmgi.get(),
                 self.aftf.get(),
-                ('Cutoff', 'MG Int').index(self.aftfm.get()),
+                ('MG Int', 'Cutoff').index(self.aftfm.get()),
                 self.aftvl.get(),
                 self.joyr.get(),
                 self.joyf.get(),
@@ -258,12 +260,12 @@ class DSS1gui(Application):
                 (16,8,4).index(int(self.osc2o.get())),
                 self.osc2d.get(),
                 self.osc2i.get(),
-                ('None', 'Osc1', 'Osc2', 'Both').index(self.omgm.get()),
+                ('Off', 'Osc1', 'Osc2', 'Both').index(self.omgm.get()),
                 self.omgf.get(),
                 self.omgi.get(),
                 self.omgd.get(),
-                ('Osc1', 'Osc2', 'Both').index(self.autom.get()),
-                ('Up', 'Down').index(self.autop.get()),
+                ('Off', 'Osc1', 'Osc2', 'Both').index(self.autom.get()),
+                ('Down', 'Up').index(self.autop.get()),
                 self.autot.get(),
                 self.unid.get(),
                 0,                      #?
@@ -276,6 +278,8 @@ class DSS1gui(Application):
     def setup(self):
         self.master.title('DSS-1 Main Control')
 
+        self.menu.add_command(label='Get Parameters', command = lambda: self.execCom(1))
+
         #Background
         backimage = PhotoImage(file = curDir + '/background.png')
         backlabel = Label(self, image=backimage, bd = 0)
@@ -287,9 +291,9 @@ class DSS1gui(Application):
     #Autobend
         self.createText((0,o), 'Autobend', columnspan = 2, stick = E+W)
         self.createText((1,o), 'Mode')
-        self.autom = self.createDropdown((1,o+1), ['Osc1', 'Osc2', 'Both'], start = 'Both')
+        self.autom = self.createDropdown((1,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
         self.createText((2,o), 'Polarity')
-        self.autop = self.createDropdown((2,o+1), ['Up', 'Down'], start = 'Up')
+        self.autop = self.createDropdown((2,o+1), ['Down', 'Up'], start = 'Up')
         self.createText((3,o), 'Intensity')
         self.autoi = self.createSlider((3,o+1), (0,127), start = 0)
         self.createText((4,o), 'Time')
@@ -364,7 +368,7 @@ class DSS1gui(Application):
         self.filterinv = self.createCheckbutton((6,o+3), text = '', columnspan = 3)
 
     #Filter EG
-        self.egfc = self.createCanvas((7,o), columnspan = 6, rowspan = 2, size=(220,100))
+        self.egfc = self.createCanvas((7,o), columnspan = 6, rowspan = 2, size=(225,100))
         self.egfa = self.createSlider((9,o),   (63,0), start = 0, orient = 1, span=(2,1))
         self.egfd = self.createSlider((9,o+1), (63,0), start = 0, orient = 1, span=(2,1))
         self.egfb = self.createSlider((9,o+2), (63,0), start = 0, orient = 1, span=(2,1))
@@ -389,7 +393,7 @@ class DSS1gui(Application):
         self.bass = self.createSlider((4, o+3), (-4,8), start = 0, span=(1,3))
   
     #VCA EG
-        self.egvc = self.createCanvas((7,o), columnspan = 6, rowspan = 2, size=(220,100))
+        self.egvc = self.createCanvas((7,o), columnspan = 6, rowspan = 2, size=(225,100))
         self.egva = self.createSlider((9,o),   (63,0), start = 0, orient = 1, span=(2,1))
         self.egvd = self.createSlider((9,o+1), (63,0), start = 0, orient = 1, span=(2,1))
         self.egvb = self.createSlider((9,o+2), (63,0), start = 0, orient = 1, span=(2,1))
@@ -442,17 +446,17 @@ class DSS1gui(Application):
         self.createText((h+3,o), 'Delay')
         self.omgd = self.createSlider((h+3,o+1), (0,15), start = 0)
         self.createText((h+4,o), 'Mode')
-        self.omgm = self.createDropdown((h+4,o+1), ['None', 'Osc1', 'Osc2', 'Both'], start = 'Both')
+        self.omgm = self.createDropdown((h+4,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
        
         o += 3
 
         self.createText((h,o), 'Filter MG', columnspan = 2, stick = E+W)
         self.createText((h+1,o), 'Frequency')
-        self.fmgf = self.createSlider((h+1,o+1), (0,31), start = 0)
+        self.fmgf = self.createSlider((h+1,o+1), (0,63), start = 0)
         self.createText((h+2,o), 'Intensity')
-        self.fmgi = self.createSlider((h+2,o+1), (0,15), start = 0)
+        self.fmgi = self.createSlider((h+2,o+1), (0,63), start = 0)
         self.createText((h+3,o), 'Delay')
-        self.fmgd = self.createSlider((h+3,o+1), (0,15), start = 0)
+        self.fmgd = self.createSlider((h+3,o+1), (0,63), start = 0)
 
         o += 21
 
@@ -512,7 +516,7 @@ class DSS1gui(Application):
         self.createText((h+2,o), 'Filter', columnspan = 3)
         self.aftf = self.createSlider((h+2,o+3), (0,15), start = 0, span = (1,3))
         self.createText((h+3,o), 'Filter Mod', columnspan = 3)
-        self.aftfm = self.createDropdown((h+3,o+3), ['Cutoff', 'MG Int'], start = 'Cutoff', columnspan = 3)
+        self.aftfm = self.createDropdown((h+3,o+3), ['MG Int', 'Cutoff'], start = 'MG Int', columnspan = 3)
         self.createText((h+4,o), 'VCA Level', columnspan = 3)
         self.aftvl = self.createSlider((h+4,o+3), (0,15), start = 0, span = (1,3))
         o += 7
@@ -533,9 +537,5 @@ class DSS1gui(Application):
         self.createText((h+3,o), 'Unison Detune')
         self.unid = self.createSlider((h+3,o+1), [0,7], start = 4)
 
-app = DSS1gui()
 
 
-app.master.protocol("WM_DELETE_WINDOW", lambda: quit())
-updateTask()
-app.master.mainloop()

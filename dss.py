@@ -1,10 +1,6 @@
 from time import clock
 midi = __import__('midi')
 
-
-print(midi.getMidiDevices())
-
-
 korgID = 0b01000010
 dss1ID = 0b00001011
 
@@ -39,32 +35,32 @@ class DSS():
         self.multiName = []
         self.multiLen = []
         #Initial DSS1 parameters
-        self.param = {'osc1vol'         :   {'l': 0, 'h': 127, 'v':   0},   #osc 1 mix ratio
+        self.param = {'osc1vol'         :   {'l': 0, 'h': 127, 'v': 100},   #osc 1 mix ratio
                       'osc2vol'         :   {'l': 0, 'h': 127, 'v':   0},   #osc 2 mix ratio
                       'autobendint'     :   {'l': 0, 'h': 127, 'v':   0},   #auto bend intensity
                       'noisevol'        :   {'l': 0, 'h':  63, 'v':   0},   #noise level
-                      'vcfmode'         :   {'l': 0, 'h':   1, 'v':   0},   #vcf mode
-                      'vcfegpol'        :   {'l': 0, 'h':   1, 'v':   0},   #vcf eg polarity
-                      'vcfcutoff'       :   {'l': 0, 'h': 127, 'v':   0},   #vcf cutoff frequency
+                      'vcfmode'         :   {'l': 0, 'h':   1, 'v':   1},   #vcf mode
+                      'vcfegpol'        :   {'l': 0, 'h':   1, 'v':   1},   #vcf eg polarity
+                      'vcfcutoff'       :   {'l': 0, 'h': 127, 'v': 127},   #vcf cutoff frequency
                       'vcfegint'        :   {'l': 0, 'h':  63, 'v':   0},   #vcf eg intensity
                       'vcfres'          :   {'l': 0, 'h':  63, 'v':   0},   #vcf resonance
                       'vcfkbd'          :   {'l': 0, 'h':  63, 'v':   0},   #vcf keyboard track
-                      'vcfmgfreq'       :   {'l': 0, 'h':  63, 'v':   0},   #vcf mg-frequency
+                      'vcfmgfreq'       :   {'l': 0, 'h':  63, 'v':  44},   #vcf mg-frequency
                       'vcfmgdelay'      :   {'l': 0, 'h':  63, 'v':   0},   #vcf mg-delay
                       'vcfmgint'        :   {'l': 0, 'h':  63, 'v':   0},   #vcf mg-intensity
                       'vcfega'          :   {'l': 0, 'h':  63, 'v':   0},   #vcf eg attack
-                      'vcfegd'          :   {'l': 0, 'h':  63, 'v':   0},   #decay
-                      'vcfegb'          :   {'l': 0, 'h':  63, 'v':   0},   #break point
-                      'vcfegsl'         :   {'l': 0, 'h':  63, 'v':   0},   #slope
-                      'vcfegs'          :   {'l': 0, 'h':  63, 'v':   0},   #sustain
+                      'vcfegd'          :   {'l': 0, 'h':  63, 'v':  63},   #decay
+                      'vcfegb'          :   {'l': 0, 'h':  63, 'v':  63},   #break point
+                      'vcfegsl'         :   {'l': 0, 'h':  63, 'v':  63},   #slope
+                      'vcfegs'          :   {'l': 0, 'h':  63, 'v':  63},   #sustain
                       'vcfegr'          :   {'l': 0, 'h':  63, 'v':   0},   #release
                       'vcadkbd'         :   {'l': 0, 'h': 127, 'v':   0},   #vca decay keyboard track (val above 63 negative)
-                      'vcalevel'        :   {'l': 0, 'h':  63, 'v':   0},   #vca total level
+                      'vcalevel'        :   {'l': 0, 'h':  63, 'v':  50},   #vca total level
                       'vcaega'          :   {'l': 0, 'h':  63, 'v':   0},   #vca eg attack
-                      'vcaegd'          :   {'l': 0, 'h':  63, 'v':   0},   #decay
-                      'vcageb'          :   {'l': 0, 'h':  63, 'v':   0},   #break point
-                      'vcaegsl'         :   {'l': 0, 'h':  63, 'v':   0},   #slope
-                      'vcaegs'          :   {'l': 0, 'h':  63, 'v':   0},   #sustain
+                      'vcaegd'          :   {'l': 0, 'h':  63, 'v':  63},   #decay
+                      'vcageb'          :   {'l': 0, 'h':  63, 'v':  63},   #break point
+                      'vcaegsl'         :   {'l': 0, 'h':  63, 'v':  63},   #slope
+                      'vcaegs'          :   {'l': 0, 'h':  63, 'v':  63},   #sustain
                       'vcaegr'          :   {'l': 0, 'h':  63, 'v':   0},   #release
                       'vel-autobendint' :   {'l': 0, 'h':  63, 'v':   0},   #velocity sensitive auto bend intensity
                       'vel-vcfcutoff'   :   {'l': 0, 'h':  63, 'v':   0},   #cutoff
@@ -79,19 +75,19 @@ class DSS():
                       'aft-vcfmod'      :   {'l': 0, 'h':  15, 'v':   0},   #vcf mod (cutoff / mg)
                       'aft-vcfpar.'     :   {'l': 0, 'h':   1, 'v':   0},   #vcf mod slot
                       'aft-vcalevel'    :   {'l': 0, 'h':  15, 'v':   0},   #vca level
-                      'joypitchrange'   :   {'l': 0, 'h':  12, 'v':   0},   #joystick pitch bend range
+                      'joypitchrange'   :   {'l': 0, 'h':  12, 'v':   2},   #joystick pitch bend range
                       'joyvcf'          :   {'l': 0, 'h':   1, 'v':   0},   #joystick vcf sweep
-                      'eqtreble'        :   {'l': 0, 'h':  12, 'v':   0},   #equalizer treble
-                      'eqbass'          :   {'l': 0, 'h':  12, 'v':   0},   #equalizer bass
-                      'ddlmgafreq'      :   {'l': 0, 'h':  63, 'v':   0},   #delay mg-a frequency
-                      'ddlmgbfreq.'     :   {'l': 0, 'h':  63, 'v':   0},   #delay mg-b frequency
-                      'ddl1time'        :   {'l': 0, 'h': 500, 'v':   0},   #delay 1 time
+                      'eqtreble'        :   {'l': 0, 'h':  12, 'v':   4},   #equalizer treble
+                      'eqbass'          :   {'l': 0, 'h':  12, 'v':   4},   #equalizer bass
+                      'ddlmgafreq'      :   {'l': 0, 'h':  63, 'v':  20},   #delay mg-a frequency
+                      'ddlmgbfreq.'     :   {'l': 0, 'h':  63, 'v':  20},   #delay mg-b frequency
+                      'ddl1time'        :   {'l': 0, 'h': 500, 'v': 500},   #delay 1 time
                       'ddl1fb'          :   {'l': 0, 'h':  15, 'v':   0},   #delay 1 feedback
                       'ddl1level'       :   {'l': 0, 'h':  15, 'v':   0},   #delay 1 effect level
                       'ddl1mgaint'      :   {'l': 0, 'h':  63, 'v':   0},   #delay 1 mg a modulation intensity
                       'ddl1mgbint'      :   {'l': 0, 'h':  63, 'v':   0},   #delay 1 mg b modulation intensity
                       'ddl2input'       :   {'l': 0, 'h':   1, 'v':   0},   #delay 2 input select
-                      'ddl2time'        :   {'l': 0, 'h': 500, 'v':   0},   #delay 2 time
+                      'ddl2time'        :   {'l': 0, 'h': 500, 'v': 500},   #delay 2 time
                       'ddl2fb'          :   {'l': 0, 'h':  15, 'v':   0},   #delay 2 feedback
                       'ddl2level'       :   {'l': 0, 'h':  15, 'v':   0},   #delay 2 effect level
                       'ddl2mgaint'      :   {'l': 0, 'h':  63, 'v':   0},   #delay 2 mg a modulation intensity
@@ -99,24 +95,24 @@ class DSS():
                       'ddl2modinv'      :   {'l': 0, 'h':   1, 'v':   0},   #delay 2 modulation invertion
                       'osc1ms'          :   {'l': 0, 'h':  15, 'v':   0},   #oscillator 1 multi sound number
                       'osc2ms'          :   {'l': 0, 'h':  15, 'v':   0},   #oscillator 2 multi sound number
-                      'oscbendrange'    :   {'l': 0, 'h':  12, 'v':   0},   #do not touch?
+                      'oscbendrange'    :   {'l': 0, 'h':  12, 'v':  12},   #do not touch?
                       'sync'            :   {'l': 0, 'h':   1, 'v':   0},   #osc 2 sync
-                      'resolution'      :   {'l': 0, 'h':   4, 'v':   0},   #d/a resolution
-                      'osc1oct'         :   {'l': 0, 'h':   2, 'v':   0},   #osc 1 octave
-                      'osc2oct'         :   {'l': 0, 'h':   2, 'v':   0},   #osc 2 octave
+                      'resolution'      :   {'l': 0, 'h':   4, 'v':   4},   #d/a resolution
+                      'osc1oct'         :   {'l': 0, 'h':   2, 'v':   1},   #osc 1 octave
+                      'osc2oct'         :   {'l': 0, 'h':   2, 'v':   1},   #osc 2 octave
                       'osc2detune'      :   {'l': 0, 'h':  63, 'v':   0},   #osc 2 detune
                       'osc2interval'    :   {'l': 0, 'h':  11, 'v':   0},   #osc 2 interval
-                      'oscmgselect'     :   {'l': 0, 'h':   3, 'v':   0},   #modulation select
-                      'oscmgfreq'       :   {'l': 0, 'h':  31, 'v':   0},   #osc mod freq
+                      'oscmgselect'     :   {'l': 0, 'h':   3, 'v':   3},   #modulation select
+                      'oscmgfreq'       :   {'l': 0, 'h':  31, 'v':  18},   #osc mod freq
                       'oscmgint'        :   {'l': 0, 'h':  15, 'v':   0},   #osc mod intensity
                       'oscmgdelay'      :   {'l': 0, 'h':  15, 'v':   0},   #osc mod delay
-                      'autobendselect'  :   {'l': 0, 'h':   3, 'v':   0},   #auto bend select
-                      'autobendpol'     :   {'l': 0, 'h':   1, 'v':   0},   #auto bend polarity
+                      'autobendselect'  :   {'l': 0, 'h':   3, 'v':   3},   #auto bend select
+                      'autobendpol'     :   {'l': 0, 'h':   1, 'v':   1},   #auto bend polarity
                       'autobendtime'    :   {'l': 0, 'h':  31, 'v':   0},   #auto bend time
-                      'unisondetune'    :   {'l': 0, 'h':   7, 'v':   0},   #unison detune
+                      'unisondetune'    :   {'l': 0, 'h':   7, 'v':   7},   #unison detune
                       'veloscchange'    :   {'l': 0, 'h':  31, 'v':   0},   #???
-                      'assign'          :   {'l': 0, 'h':   2, 'v':   0},   #poly2, poly1, unison
-                      'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   0}}   #amount of unison voices
+                      'assign'          :   {'l': 0, 'h':   2, 'v':   1},   #poly2, poly1, unison
+                      'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   3}}   #amount of unison voices
 
     #Gets the current mode
     def getMode(self):
@@ -265,37 +261,3 @@ class DSS():
 
         midi.sendSysex(self.output, sysex)
     
-    
-      
-dss = DSS(1,4)
-
-
-
-midi.clearMidi(dss.input)
-
-dss.getParameters(31)
-
-print(dss.param)
-
-dss.setParameters('Synth 4')
-
-dss.saveProgram(31)
-
-'''
-iter = 0
-while True:
-    iter += 5
-    t = clock()
-
-    #dss.getNameList()
-    dss.getParameters(29)
-
-    #print(dss.namelist)
-    print(dss.param)
-    
-    while clock() < t + 1:
-        pass
-'''
-
-while True:
-    pass
