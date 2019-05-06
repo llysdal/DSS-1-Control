@@ -26,7 +26,7 @@ def getMidiOutputDevice(id):
     return midi.Output(id)
     
 def clearMidi(device):
-    device.read(10000)
+    device.read(1000)
 
 def receiveMidi(device):
     message = device.read(100)
