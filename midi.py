@@ -31,7 +31,7 @@ def clearMidi(device):
     device.read(1000)
 
 def receiveMidi(device):
-    message = device.read(100)
+    message = device.read(1000)
     return message
 
 def sendSysex(device, message):  

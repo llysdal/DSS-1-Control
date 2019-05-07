@@ -29,7 +29,7 @@ class DSS():
         #Namelist
         self.namelist = []
         for i in range(32):
-            self.namelist.append(str(i))
+            self.namelist.append(str(i+1))
         #Multisound dictionary
         self.multiAmount = 0
         self.multiName = []
@@ -114,6 +114,17 @@ class DSS():
                       'assign'          :   {'l': 0, 'h':   2, 'v':   1},   #poly2, poly1, unison
                       'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   3}}   #amount of unison voices
 
+    #Checks if the communication line is open
+    def checkCom(self):
+        self.mode = -1
+        self.getMode()
+
+        if self.mode == -1:
+            return False
+        else:
+            return True
+
+
     #Gets the current mode
     def getMode(self):
         midi.sendSysex(self.output, sysexGet['mode'])
@@ -126,7 +137,7 @@ class DSS():
             if sysex[0:5] == [0xF0, 0x42, 0x30, 0x0B, 0x42]:
                 #Read mode
                 self.mode = sysex[5]
-    
+
     #Sets the mode to playmode
     def setPlayMode(self):
         midi.sendSysex(self.output, sysexSet['playmode'])
@@ -144,6 +155,7 @@ class DSS():
                 #Names received, put them in self.namelist
                 for i in range(32):
                     self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
+
 
     #Gets the multisounds on the synth
     def getMultisoundsList(self):
@@ -213,14 +225,22 @@ class DSS():
         valueIndex = sysex.index('value')
 
         if parameter == 46 or parameter == 52:
-            sysex[valueIndex] = value%128
-            sysex.insert(valueIndex, value//128)
+            sysex[valueIndex] = value//128
+            sysex.insert(valueIndex, value%128)
         else:
             sysex[valueIndex] = value
         
         #Sending the sysex request to the DSS-1
         midi.sendSysex(self.output, sysex)
 
+    def setKey(self, key):
+        parNum = list(self.param.keys()).index(key)
+        parVal = self.param[key]['v']
+
+        #print(parNum)
+        #print(parVal)
+
+        self.setParameter(parNum, parVal)
         
     #Sets all parameters and assigns the patch a name
     def setParameters(self, name):

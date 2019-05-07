@@ -157,8 +157,8 @@ class DSS1gui(Application):
         self.aftvl.set(values[39])
         self.joyr.set(values[40])
         self.joyf.set(values[41])
-        self.treb.set(values[42]-4)
-        self.bass.set(values[43]-4)
+        self.bass.set(values[42]-4)
+        self.treb.set(values[43]-4)
         self.mgaf.set(values[44])
         self.mgbf.set(values[45])
         self.d1t.set(values[46])
@@ -173,8 +173,8 @@ class DSS1gui(Application):
         self.mgam2.set(values[55])
         self.mgbm2.set(values[56])
         self.d2mi.set(values[57])
-        self.osc1w.set(values[58])
-        self.osc2w.set(values[59])
+        self.osc1w.set(values[58]+1)
+        self.osc2w.set(values[59]+1)
         self.osc2s.set(values[61])
         self.oscres.set(('6 bits', '7 bits', '8 bits', '10 bits', '12 bits')[values[62]])
         self.osc1o.set((16,8,4)[values[63]])
@@ -235,8 +235,8 @@ class DSS1gui(Application):
                 self.aftvl.get(),
                 self.joyr.get(),
                 self.joyf.get(),
-                self.treb.get()+4,
                 self.bass.get()+4,
+                self.treb.get()+4,
                 self.mgaf.get(),
                 self.mgbf.get(),
                 self.d1t.get(),
@@ -251,8 +251,8 @@ class DSS1gui(Application):
                 self.mgam2.get(),
                 self.mgbm2.get(),
                 self.d2mi.get(),
-                int(self.osc1w.get()),
-                int(self.osc2w.get()),
+                int(self.osc1w.get())-1,
+                int(self.osc2w.get())-1,
                 12,                     #?
                 self.osc2s.get(),
                 ('6 bits', '7 bits', '8 bits', '10 bits', '12 bits').index(self.oscres.get()),
@@ -278,7 +278,9 @@ class DSS1gui(Application):
     def setup(self):
         self.master.title('DSS-1 Main Control')
 
-        self.menu.add_command(label='Get Parameters', command = lambda: self.execCom(1))
+        self.menu.add_command(label='Get Parameters', command = lambda: self.execCom('getparameters'))
+        self.menu.add_command(label='Set Parameters', command = lambda: self.execCom('setparameters'))
+        self.menu.add_command(label='Save Program', command = lambda: self.execCom('saveprogram'))
 
         #Background
         backimage = PhotoImage(file = curDir + '/background.png')
@@ -286,18 +288,27 @@ class DSS1gui(Application):
         #backlabel.place(x=0, y=0)
         backlabel.image = backimage
 
-        o = 0
+    #Program management
+        self.createText((0,0), 'Program')
+        self.prog = Spinbox(self, from_=1, to=32, width = 2, command = lambda: self.execCom('updatename'))
+        self.prog.grid(row = 0, column = 1, sticky = E)
 
+        self.progname = Entry(self, width = 10)
+        self.progname.grid(row = 0, column = 2, sticky = W)
+
+
+
+        o = 0
     #Autobend
-        self.createText((0,o), 'Autobend', columnspan = 2, stick = E+W)
-        self.createText((1,o), 'Mode')
-        self.autom = self.createDropdown((1,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
-        self.createText((2,o), 'Polarity')
-        self.autop = self.createDropdown((2,o+1), ['Down', 'Up'], start = 'Up')
-        self.createText((3,o), 'Intensity')
-        self.autoi = self.createSlider((3,o+1), (0,127), start = 0)
-        self.createText((4,o), 'Time')
-        self.autot = self.createSlider((4,o+1), (0,31), start = 0)
+        self.createText((10,o), 'Autobend', columnspan = 2, stick = E+W)
+        self.createText((11,o), 'Mode')
+        self.autom = self.createDropdown((11,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
+        self.createText((12,o), 'Polarity')
+        self.autop = self.createDropdown((12,o+1), ['Down', 'Up'], start = 'Up')
+        self.createText((13,o), 'Intensity')
+        self.autoi = self.createSlider((13,o+1), (0,127), start = 0)
+        self.createText((14,o), 'Time')
+        self.autot = self.createSlider((14,o+1), (0,31), start = 0)
         self.minSizeH((0,o+1), 80)
         o += 2
 
@@ -306,13 +317,13 @@ class DSS1gui(Application):
         o += 1
 
     #Oscillator 1
-        self.createText((0,o), 'Oscillator 1', columnspan = 2, stick = E+W)
-        self.createText((1,o), 'Multisound')
-        self.osc1w  = self.createDropdown((1,o+1), range(1,16), start = 1)
-        self.createText((2,o), 'Octave')
-        self.osc1o  = self.createDropdown((2,o+1), [4,8,16], start = 8)
-        self.createText((4,o), 'D/A Resolution')
-        self.oscres = self.createDropdown((4,o+1), ['6 bits', '7 bits', '8 bits', '10 bits', '12 bits'], start = '12 bits')
+        self.createText((10,o), 'Oscillator 1', columnspan = 2, stick = E+W)
+        self.createText((11,o), 'Multisound')
+        self.osc1w  = self.createDropdown((11,o+1), range(1,16), start = 1)
+        self.createText((12,o), 'Octave')
+        self.osc1o  = self.createDropdown((12,o+1), [4,8,16], start = 8)
+        self.createText((14,o), 'D/A Resolution')
+        self.oscres = self.createDropdown((14,o+1), ['6 bits', '7 bits', '8 bits', '10 bits', '12 bits'], start = '12 bits')
         self.minSizeH((0,o+1), 80)
         o += 2
 
@@ -321,17 +332,17 @@ class DSS1gui(Application):
         o += 1
 
     #Oscillator 2
-        self.createText((0,o), 'Oscillator 2', columnspan = 2, stick = E+W)
-        self.createText((1,o), 'Multisound')
-        self.osc2w = self.createDropdown((1,o+1), range(1,17), start = 1)
-        self.createText((2,o), 'Octave')
-        self.osc2o = self.createDropdown((2,o+1), [4,8,16], start = 8)
-        self.createText((3,o), 'Interval')
-        self.osc2i = self.createSlider((3,o+1), (0,11), start = 0)
-        self.createText((4,o), 'Detune')
-        self.osc2d = self.createSlider((4,o+1), (0,63), start = 0)
-        self.createText((5,o), 'Sync')
-        self.osc2s = self.createCheckbutton((5,o+1), text = '')
+        self.createText((10,o), 'Oscillator 2', columnspan = 2, stick = E+W)
+        self.createText((11,o), 'Multisound')
+        self.osc2w = self.createDropdown((11,o+1), range(1,17), start = 1)
+        self.createText((12,o), 'Octave')
+        self.osc2o = self.createDropdown((12,o+1), [4,8,16], start = 8)
+        self.createText((13,o), 'Interval')
+        self.osc2i = self.createSlider((13,o+1), (0,11), start = 0)
+        self.createText((14,o), 'Detune')
+        self.osc2d = self.createSlider((14,o+1), (0,63), start = 0)
+        self.createText((15,o), 'Sync')
+        self.osc2s = self.createCheckbutton((15,o+1), text = '')
         o += 2
 
         #Gap
@@ -339,13 +350,13 @@ class DSS1gui(Application):
         o += 1
 
     #Mixer
-        self.createText((0,o), 'Mixer', columnspan = 3, stick = E+W)
-        self.createText((4,o), 'Osc 1')
-        self.osc1v = self.createSlider((1,o), (100,0), start = 100, orient = 1, span = (3,1))
-        self.createText((4,o+1), 'Osc 2')
-        self.osc2v = self.createSlider((1,o+1), (100,0), start = 0, orient = 1, span = (3,1))
-        self.createText((4,o+2), 'Noise')
-        self.noise = self.createSlider((1,o+2), (63,0), start = 0, orient = 1, span = (3,1))
+        self.createText((10,o), 'Mixer', columnspan = 3, stick = E+W)
+        self.createText((14,o), 'Osc 1')
+        self.osc1v = self.createSlider((11,o), (100,0), start = 100, orient = 1, span = (3,1))
+        self.createText((14,o+1), 'Osc 2')
+        self.osc2v = self.createSlider((11,o+1), (100,0), start = 0, orient = 1, span = (3,1))
+        self.createText((14,o+2), 'Noise')
+        self.noise = self.createSlider((11,o+2), (63,0), start = 0, orient = 1, span = (3,1))
         o += 3
 
         #Gap
@@ -353,28 +364,28 @@ class DSS1gui(Application):
         o += 1
 
     #Filter
-        self.createText((0,o), 'Filter', columnspan = 6, stick = E+W)
-        self.createText((1,o), 'Mode', columnspan = 3)
-        self.filterm = self.createDropdown((1,o+3), ['12dB', '24dB'], start = '24dB', columnspan = 3)
-        self.createText((2,o), 'Cutoff', columnspan = 3)
-        self.filterc = self.createSlider((2,o+3), (0,127), start = 127, span=(1,3))
-        self.createText((3,o), 'Resonance', columnspan = 3)
-        self.filterr = self.createSlider((3,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((4,o), 'Keyboard Track', columnspan = 3)
-        self.filterk = self.createSlider((4,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((5, o), 'Filter EG', columnspan = 3)
-        self.filtereg = self.createSlider((5,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((6, o), 'EG Invert', columnspan = 3)
-        self.filterinv = self.createCheckbutton((6,o+3), text = '', columnspan = 3)
+        self.createText((10,o), 'Filter', columnspan = 6, stick = E+W)
+        self.createText((11,o), 'Mode', columnspan = 3)
+        self.filterm = self.createDropdown((11,o+3), ['12dB', '24dB'], start = '24dB', columnspan = 3)
+        self.createText((12,o), 'Cutoff', columnspan = 3)
+        self.filterc = self.createSlider((12,o+3), (0,127), start = 127, span=(1,3))
+        self.createText((13,o), 'Resonance', columnspan = 3)
+        self.filterr = self.createSlider((13,o+3), (0,63), start = 0, span=(1,3))
+        self.createText((14,o), 'Keyboard Track', columnspan = 3)
+        self.filterk = self.createSlider((14,o+3), (0,63), start = 0, span=(1,3))
+        self.createText((15, o), 'Filter EG', columnspan = 3)
+        self.filtereg = self.createSlider((15,o+3), (0,63), start = 0, span=(1,3))
+        self.createText((16, o), 'EG Invert', columnspan = 3)
+        self.filterinv = self.createCheckbutton((16,o+3), text = '', columnspan = 3)
 
     #Filter EG
-        self.egfc = self.createCanvas((7,o), columnspan = 6, rowspan = 2, size=(225,100))
-        self.egfa = self.createSlider((9,o),   (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfd = self.createSlider((9,o+1), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfb = self.createSlider((9,o+2), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfsl= self.createSlider((9,o+3), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfs = self.createSlider((9,o+4), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfr = self.createSlider((9,o+5), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfc = self.createCanvas((17,o), columnspan = 6, rowspan = 2, size=(225,100))
+        self.egfa = self.createSlider((19,o),   (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfd = self.createSlider((19,o+1), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfb = self.createSlider((19,o+2), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfsl= self.createSlider((19,o+3), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfs = self.createSlider((19,o+4), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfr = self.createSlider((19,o+5), (63,0), start = 0, orient = 1, span=(2,1))
         o += 6
 
         #Gap
@@ -382,24 +393,24 @@ class DSS1gui(Application):
         o += 1
 
     #VCA
-        self.createText((0,o), 'VCA', columnspan = 6, stick = E+W)
-        self.createText((1,o), 'Level', columnspan = 3)
-        self.vcal = self.createSlider((1,o+3), (0,63), start = 63, span=(1,3))
-        self.createText((2,o), 'KBD Decay', columnspan = 3)
-        self.vcad = self.createSlider((2, o+3), (-63,63), start = 0, span=(1,3))
-        self.createText((3,o), 'Treble', columnspan = 3)
-        self.treb = self.createSlider((3, o+3), (-4,8), start = 0, span=(1,3))
-        self.createText((4,o), 'Bass', columnspan = 3)
-        self.bass = self.createSlider((4, o+3), (-4,8), start = 0, span=(1,3))
+        self.createText((10,o), 'VCA', columnspan = 6, stick = E+W)
+        self.createText((11,o), 'Level', columnspan = 3)
+        self.vcal = self.createSlider((11,o+3), (0,63), start = 63, span=(1,3))
+        self.createText((12,o), 'KBD Decay', columnspan = 3)
+        self.vcad = self.createSlider((12, o+3), (-63,63), start = 0, span=(1,3))
+        self.createText((13,o), 'Treble', columnspan = 3)
+        self.treb = self.createSlider((13, o+3), (-4,8), start = 0, span=(1,3))
+        self.createText((14,o), 'Bass', columnspan = 3)
+        self.bass = self.createSlider((14, o+3), (-4,8), start = 0, span=(1,3))
   
     #VCA EG
-        self.egvc = self.createCanvas((7,o), columnspan = 6, rowspan = 2, size=(225,100))
-        self.egva = self.createSlider((9,o),   (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvd = self.createSlider((9,o+1), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvb = self.createSlider((9,o+2), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvsl= self.createSlider((9,o+3), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvs = self.createSlider((9,o+4), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvr = self.createSlider((9,o+5), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvc = self.createCanvas((17,o), columnspan = 6, rowspan = 2, size=(225,100))
+        self.egva = self.createSlider((19,o),   (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvd = self.createSlider((19,o+1), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvb = self.createSlider((19,o+2), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvsl= self.createSlider((19,o+3), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvs = self.createSlider((19,o+4), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvr = self.createSlider((19,o+5), (63,0), start = 0, orient = 1, span=(2,1))
         o += 6
 
         #Gap
@@ -407,13 +418,13 @@ class DSS1gui(Application):
         o += 1
 
     #Delay 1
-        self.createText((0,o), 'Delay 1', columnspan = 2, stick = E+W)
-        self.createText((1,o), 'Time')
-        self.d1t = self.createSlider((1,o+1), (0,500), start = 200)
-        self.createText((2,o), 'Feedback')
-        self.d1f = self.createSlider((2,o+1), (0,15), start = 0)
-        self.createText((3,o), 'Effect Level')
-        self.d1e = self.createSlider((3,o+1), (0,15), start = 0)
+        self.createText((10,o), 'Delay 1', columnspan = 2, stick = E+W)
+        self.createText((11,o), 'Time')
+        self.d1t = self.createSlider((11,o+1), (0,500), start = 200)
+        self.createText((12,o), 'Feedback')
+        self.d1f = self.createSlider((12,o+1), (0,15), start = 0)
+        self.createText((13,o), 'Effect Level')
+        self.d1e = self.createSlider((13,o+1), (0,15), start = 0)
         o += 2
 
         #Gap
@@ -421,21 +432,21 @@ class DSS1gui(Application):
         o += 1
 
     #Delay 2
-        self.createText((0,o), 'Delay 2', columnspan = 2, stick = E+W)
-        self.createText((1,o), 'Time')
-        self.d2t = self.createSlider((1,o+1), (0,500), start = 200)
-        self.createText((2,o), 'Feedback')
-        self.d2f = self.createSlider((2,o+1), (0,15), start = 0)
-        self.createText((3,o), 'Effect Level')
-        self.d2e = self.createSlider((3,o+1), (0,15), start = 0)
-        self.createText((4,o), 'Source')
-        self.d2s = self.createDropdown((4,o+1), ['Direct', 'Delay 1'], start = 'Direct')
-        self.createText((5,o), 'Mod Invert')
-        self.d2mi = self.createCheckbutton((5,o+1), text = '')
+        self.createText((10,o), 'Delay 2', columnspan = 2, stick = E+W)
+        self.createText((11,o), 'Time')
+        self.d2t = self.createSlider((11,o+1), (0,500), start = 200)
+        self.createText((12,o), 'Feedback')
+        self.d2f = self.createSlider((12,o+1), (0,15), start = 0)
+        self.createText((13,o), 'Effect Level')
+        self.d2e = self.createSlider((13,o+1), (0,15), start = 0)
+        self.createText((14,o), 'Source')
+        self.d2s = self.createDropdown((14,o+1), ['Direct', 'Delay 1'], start = 'Direct')
+        self.createText((15,o), 'Mod Invert')
+        self.d2mi = self.createCheckbutton((15,o+1), text = '')
 
     #MOD Section
         o = 3
-        h = 6
+        h = 16
 
     #MG
         self.createText((h,o), 'Osc MG', columnspan = 2, stick = E+W)
@@ -480,7 +491,7 @@ class DSS1gui(Application):
 
     #Velocity Sensitive
         o = 0
-        h = 12
+        h = 22
 
         self.minSizeV((h-1,0), 50)
 

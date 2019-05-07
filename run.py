@@ -19,25 +19,49 @@ print()
 for acc in range(len(devices[1])):
     print(str(list(devices[1].values())[acc]) + ' - ' + list(devices[1].keys())[acc])
 o = int(input('Output> '))
+print()
 
 #Setup DSS1 communication
 dss = DSS.DSS(i,o)
 
+#Attempt communication
+if dss.checkCom() == False:
+    print('Communication link failed!')
+    while True:
+        pass
+print('Communications established!')
+
+#Get program names
+dss.setPlayMode()
+dss.getNameList()
+
 #Start GUI
 gui = GUI.DSS1gui()
 
-gui.setValues([100, 0, 0, 0, 1, 1, 127, 0, 0, 0, 44, 0, 0, 0, 63, 63, 63, 63, 0, 0, 50, 0, 63, 63, 63, 63, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 4, 4, 20, 20, 500, 0, 0, 0, 0, 0, 500, 0, 0, 0, 0, 0, 0, 0, 12, 0, 4, 1, 1, 0, 0, 3, 18, 0, 0, 3, 1, 0, 7, 0, 1, 3])
-
     #VCA Kbd Decay might be fucked!
-def getParam():
-    dss.getParameters(0)
+def getParams():
+    dss.getParameters(int(gui.prog.get())-1)
 
     parList = []
     for i, key in enumerate(dss.param.keys()):
         parList.append(dss.param[key]['v'])
 
+    gui.progname.delete(0, 100)
+    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
     gui.setValues(parList)
 
+def setParams():
+    dss.setParameters(gui.progname.get())
+
+def saveProgram():
+    dss.saveProgram(int(gui.prog.get())-1)
+
+def updateName():
+    dss.getNameList()
+    gui.progname.delete(0, 100)
+    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
+
+getParams()
 
 #Keep GUI updated
 def updateTask():
@@ -46,22 +70,27 @@ def updateTask():
     gui.egCanvas(gui.egvc, (gui.egva, gui.egvd, gui.egvb, gui.egvsl, gui.egvs, gui.egvr))
 
     com = gui.execcommand
-    if com:
-        print('received command')
-        if com == 1:
-            getParam()
+    if type(com) == str:
+        #print('received command')
+        if com == 'getparameters':
+            getParams()
+        if com == 'setparameters':
+            setParams()
+        if com == 'saveprogram':
+            saveProgram()
+        if com == 'updatename':
+            updateName()
 
         gui.execCom(0)
+
+    
 
     #Control check
     values = gui.getValues()
     for i, key in enumerate(dss.param.keys()):
         if values[i] != dss.param[key]['v']:
             dss.param[key]['v'] = values[i]
-
-            print(key)
-            print(dss.param[key])
-            print()
+            dss.setKey(key)
 
     gui.after(10, updateTask)
 
