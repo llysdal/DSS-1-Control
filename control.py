@@ -4,7 +4,7 @@ import os
 curDir = os.path.dirname(os.path.abspath(__file__))
 
 class Application(Frame):
-    def init(self):
+    def init(self, titlefont, textfont, numberfont):
         Frame.__init__(self, None)
         self.grid(sticky=N+S+E+W)
 
@@ -16,8 +16,13 @@ class Application(Frame):
         self.black = "#212121"
         self.grey  = '#2e2e2e'
         self.white = '#e2e2e2'
+        self.blue  = '#336ece'
 
-        self.configure(background = self.black)
+        self.titlefont = titlefont
+        self.textfont = textfont
+        self.numberfont = numberfont
+
+        self.configure(background = self.grey)
 
     def createCanvas(self, gridpos, columnspan = 1, rowspan = 1, size = (100,100)):
         canvas = Canvas(self, width = size[0], height = size[1], bg = 'black')
@@ -25,10 +30,10 @@ class Application(Frame):
 
         return canvas
     
-    def createSlider(self, gridpos, val, res = 1, start = 0, length = 100, width = 15, orient = 0, span = (1,1), showvalue = True, stick = W):
+    def createSlider(self, gridpos, val, res = 1, start = 0, length = 100, width = 15, orient = 0, span = (1,1), showvalue = True, stick = E+S):
         slider = Scale(self, from_ = val[0], to = val[1], resolution = res,\
                        orient = (HORIZONTAL, VERTICAL)[orient], length = length, showvalue = showvalue, width = width)
-        slider.configure(background = self.black, foreground = self.white, highlightthickness = 0, troughcolor = self.grey)
+        slider.configure(background = self.black, foreground = self.white, highlightthickness = 0, troughcolor = self.grey, activebackground = self.white, font = self.numberfont)
         slider.grid(row = gridpos[0], column = gridpos[1], rowspan = span[0], columnspan = span[1], sticky = stick)
         
         slider.set(start)
@@ -40,8 +45,8 @@ class Application(Frame):
         string.set(start)
     
         dropdown = OptionMenu(self, string, *values)
-        dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2)
-        dropdown.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E)
+        dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2, activebackground = self.blue)
+        dropdown.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
         
         return string
         
@@ -50,10 +55,17 @@ class Application(Frame):
         button.configure(background = self.black, foreground = self.white)
         button.grid(row = gridpos[0], column = gridpos[1], stick = N+S+E+W)
     
-    def createText(self, gridpos, text, size = 12, columnspan = 1, stick = W):
-        label = Label(self, text = text, font = ('Helvetica', size), justify = 'left')
+    def createText(self, gridpos, text, columnspan = 1, stick = W+S):
+        label = Label(self, text = text, font = self.textfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = stick)
+        
+        return label
+
+    def createTitle(self, gridpos, text, columnspan = 1):
+        label = Label(self, text = text, font = self.titlefont, justify = 'left')
+        label.configure(background = self.black, foreground = self.white)
+        label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+W)
         
         return label
         
@@ -70,8 +82,8 @@ class Application(Frame):
         intvar = IntVar()
 
         button = Checkbutton(self, text = text, variable = intvar, onvalue = 1, offvalue = 0)
-        button.configure(background = self.black)
-        button.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E)
+        button.configure(background = self.black, activebackground = self.blue)
+        button.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
 
         return intvar
 
@@ -88,16 +100,17 @@ class Application(Frame):
         self.rowconfigure(pos, minsize = width)
        
 class DSS1gui(Application):
-    def __init__(self):
-        self.init()
+    def __init__(self, titlefont, textfont, numberfont):
+        self.init(titlefont, textfont, numberfont)
         self.menu = self.createMenu()
         self.setup()
+
         self.execcommand = 0
 
 
     def egCanvas(self, canvas, egpar):
-        w,h = 225, 100
-        h2 = 90
+        w,h = canvas.winfo_width(), canvas.winfo_height()
+        h2 = h-10
         canvas.delete('all')
         attack = (w/4 * egpar[0].get()/63, h-h2)
         decay = (w/4 * egpar[1].get()/63+attack[0], h-h2*egpar[2].get()/63)
@@ -189,6 +202,7 @@ class DSS1gui(Application):
         self.autop.set(('Down', 'Up')[values[72]])
         self.autot.set(values[73])
         self.unid.set(values[74])
+        self.oscx.set(values[75])
         self.assign.set(('Poly 1', 'Poly 2', 'Unison')[values[76]])
         self.unia.set((1,2,4,8)[values[77]])
 
@@ -268,7 +282,7 @@ class DSS1gui(Application):
                 ('Down', 'Up').index(self.autop.get()),
                 self.autot.get(),
                 self.unid.get(),
-                0,                      #?
+                self.oscx.get(),
                 ('Poly 1', 'Poly 2', 'Unison').index(self.assign.get()),
                 (1,2,4,8).index(int(self.unia.get())))
 
@@ -285,22 +299,25 @@ class DSS1gui(Application):
         #Background
         backimage = PhotoImage(file = curDir + '/background.png')
         backlabel = Label(self, image=backimage, bd = 0)
-        #backlabel.place(x=0, y=0)
+        backlabel.place(x=0, y=0)
         backlabel.image = backimage
 
+
+        self.minSizeH((0,0), 5)
+        self.minSizeH((0,33), 5)
+        self.minSizeV((28,0), 5)
+
     #Program management
-        self.createText((0,0), 'Program')
+        self.createText((0,1), 'Program', stick = W+N)
         self.prog = Spinbox(self, from_=1, to=32, width = 2, command = lambda: self.execCom('updatename'))
-        self.prog.grid(row = 0, column = 1, sticky = E)
+        self.prog.grid(row = 0, column = 2, sticky = E+N)
 
         self.progname = Entry(self, width = 10)
-        self.progname.grid(row = 0, column = 2, sticky = W)
+        self.progname.grid(row = 0, column = 3, sticky = W+N)
 
-
-
-        o = 0
+        o = 1
     #Autobend
-        self.createText((10,o), 'Autobend', columnspan = 2, stick = E+W)
+        self.createTitle((10,o), 'Autobend', columnspan = 2)
         self.createText((11,o), 'Mode')
         self.autom = self.createDropdown((11,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
         self.createText((12,o), 'Polarity')
@@ -317,7 +334,7 @@ class DSS1gui(Application):
         o += 1
 
     #Oscillator 1
-        self.createText((10,o), 'Oscillator 1', columnspan = 2, stick = E+W)
+        self.createTitle((10,o), 'Oscillator 1', columnspan = 2)
         self.createText((11,o), 'Multisound')
         self.osc1w  = self.createDropdown((11,o+1), range(1,16), start = 1)
         self.createText((12,o), 'Octave')
@@ -332,7 +349,7 @@ class DSS1gui(Application):
         o += 1
 
     #Oscillator 2
-        self.createText((10,o), 'Oscillator 2', columnspan = 2, stick = E+W)
+        self.createTitle((10,o), 'Oscillator 2', columnspan = 2)
         self.createText((11,o), 'Multisound')
         self.osc2w = self.createDropdown((11,o+1), range(1,17), start = 1)
         self.createText((12,o), 'Octave')
@@ -350,12 +367,12 @@ class DSS1gui(Application):
         o += 1
 
     #Mixer
-        self.createText((10,o), 'Mixer', columnspan = 3, stick = E+W)
-        self.createText((14,o), 'Osc 1')
+        self.createTitle((10,o), 'Mixer', columnspan = 3)
+        self.createText((14,o), '1', stick = E+S)
         self.osc1v = self.createSlider((11,o), (100,0), start = 100, orient = 1, span = (3,1))
-        self.createText((14,o+1), 'Osc 2')
+        self.createText((14,o+1), '2', stick = E+S)
         self.osc2v = self.createSlider((11,o+1), (100,0), start = 0, orient = 1, span = (3,1))
-        self.createText((14,o+2), 'Noise')
+        self.createText((14,o+2), 'Noise', stick = E+S)
         self.noise = self.createSlider((11,o+2), (63,0), start = 0, orient = 1, span = (3,1))
         o += 3
 
@@ -364,14 +381,14 @@ class DSS1gui(Application):
         o += 1
 
     #Filter
-        self.createText((10,o), 'Filter', columnspan = 6, stick = E+W)
+        self.createTitle((10,o), 'Filter', columnspan = 6)
         self.createText((11,o), 'Mode', columnspan = 3)
         self.filterm = self.createDropdown((11,o+3), ['12dB', '24dB'], start = '24dB', columnspan = 3)
         self.createText((12,o), 'Cutoff', columnspan = 3)
         self.filterc = self.createSlider((12,o+3), (0,127), start = 127, span=(1,3))
         self.createText((13,o), 'Resonance', columnspan = 3)
         self.filterr = self.createSlider((13,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((14,o), 'Keyboard Track', columnspan = 3)
+        self.createText((14,o), 'KBD Track', columnspan = 3)
         self.filterk = self.createSlider((14,o+3), (0,63), start = 0, span=(1,3))
         self.createText((15, o), 'Filter EG', columnspan = 3)
         self.filtereg = self.createSlider((15,o+3), (0,63), start = 0, span=(1,3))
@@ -393,7 +410,7 @@ class DSS1gui(Application):
         o += 1
 
     #VCA
-        self.createText((10,o), 'VCA', columnspan = 6, stick = E+W)
+        self.createTitle((10,o), 'VCA', columnspan = 6)
         self.createText((11,o), 'Level', columnspan = 3)
         self.vcal = self.createSlider((11,o+3), (0,63), start = 63, span=(1,3))
         self.createText((12,o), 'KBD Decay', columnspan = 3)
@@ -418,7 +435,7 @@ class DSS1gui(Application):
         o += 1
 
     #Delay 1
-        self.createText((10,o), 'Delay 1', columnspan = 2, stick = E+W)
+        self.createTitle((10,o), 'Delay 1', columnspan = 2)
         self.createText((11,o), 'Time')
         self.d1t = self.createSlider((11,o+1), (0,500), start = 200)
         self.createText((12,o), 'Feedback')
@@ -432,7 +449,7 @@ class DSS1gui(Application):
         o += 1
 
     #Delay 2
-        self.createText((10,o), 'Delay 2', columnspan = 2, stick = E+W)
+        self.createTitle((10,o), 'Delay 2', columnspan = 2)
         self.createText((11,o), 'Time')
         self.d2t = self.createSlider((11,o+1), (0,500), start = 200)
         self.createText((12,o), 'Feedback')
@@ -445,11 +462,11 @@ class DSS1gui(Application):
         self.d2mi = self.createCheckbutton((15,o+1), text = '')
 
     #MOD Section
-        o = 3
+        o = 4
         h = 16
 
     #MG
-        self.createText((h,o), 'Osc MG', columnspan = 2, stick = E+W)
+        self.createTitle((h,o), 'Osc MG', columnspan = 2)
         self.createText((h+1,o), 'Frequency')
         self.omgf = self.createSlider((h+1,o+1), (0,31), start = 0)
         self.createText((h+2,o), 'Intensity')
@@ -461,7 +478,7 @@ class DSS1gui(Application):
        
         o += 3
 
-        self.createText((h,o), 'Filter MG', columnspan = 2, stick = E+W)
+        self.createTitle((h,o), 'Filter MG', columnspan = 2)
         self.createText((h+1,o), 'Frequency')
         self.fmgf = self.createSlider((h+1,o+1), (0,63), start = 0)
         self.createText((h+2,o), 'Intensity')
@@ -472,7 +489,7 @@ class DSS1gui(Application):
         o += 21
 
     #DDL MG
-        self.createText((h,o), 'MG A', columnspan = 2, stick = E+W)
+        self.createTitle((h,o), 'MG A', columnspan = 2)
         self.createText((h+1,o), 'Frequency')
         self.mgaf = self.createSlider((h+1,o+1), (0,63), start = 20)
         self.createText((h+2,o), 'Delay 1 Mod')
@@ -481,7 +498,7 @@ class DSS1gui(Application):
         self.mgam2 = self.createSlider((h+3,o+1), (0,63), start = 0)
         o += 3
 
-        self.createText((h,o), 'MG B', columnspan = 2, stick = E+W)
+        self.createTitle((h,o), 'MG B', columnspan = 2)
         self.createText((h+1,o), 'Frequency')
         self.mgbf = self.createSlider((h+1,o+1), (0,63), start = 20)
         self.createText((h+2,o), 'Delay 1 Mod')
@@ -490,15 +507,17 @@ class DSS1gui(Application):
         self.mgbm2 = self.createSlider((h+3,o+1), (0,63), start = 0)
 
     #Velocity Sensitive
-        o = 0
+        o = 1
         h = 22
 
         self.minSizeV((h-1,0), 50)
 
-        self.createText((h,o), 'Velocity Sensitive', columnspan = 7, stick = E+W)
+        self.createTitle((h,o), 'Velocity Sensitive', columnspan = 8)
 
-        self.createText((h+1,o), 'Autobend Intensity')
+        self.createText((h+1,o), 'Autobend Int ')
         self.vela = self.createSlider((h+1,o+1), (0,63), start = 0)
+        self.createText((h+2,o), 'X-mod')
+        self.oscx = self.createSlider((h+2,o+1), (0,31), start = 0)
 
         self.createText((h+1, o+3), 'Filter Cutoff')
         self.velfc = self.createSlider((h+1,o+4), (0,63), start = 0)
@@ -521,8 +540,8 @@ class DSS1gui(Application):
         o += 6
 
     #Aftertouch 
-        self.createText((h,o), 'Aftertouch', columnspan = 6, stick = E+W)
-        self.createText((h+1,o), 'Osc MG Intensity', columnspan = 3)
+        self.createTitle((h,o), 'Aftertouch', columnspan = 6)
+        self.createText((h+1,o), 'Osc MG Int', columnspan = 3)
         self.aftmgi = self.createSlider((h+1,o+3), (0,15), start = 0, span = (1,3))
         self.createText((h+2,o), 'Filter', columnspan = 3)
         self.aftf = self.createSlider((h+2,o+3), (0,15), start = 0, span = (1,3))
@@ -533,20 +552,18 @@ class DSS1gui(Application):
         o += 7
 
     #Joystick
-        self.createText((h,o), 'Joystick', columnspan = 6, stick = E+W)
+        self.createTitle((h,o), 'Joystick', columnspan = 6)
         self.createText((h+1,o), 'Range', columnspan = 3)
         self.joyr = self.createSlider((h+1,o+3), (0,12), start = 2, span=(1,3))
         self.createText((h+2,o), 'Filter Control', columnspan = 3)
         self.joyf = self.createCheckbutton((h+2,o+3), text = '', columnspan = 3)
-        o += 10
+        o += 7
 
     #Voice
+        self.createTitle((h,o), 'Voice', columnspan = 2)
         self.createText((h+1,o), 'Assign Mode')
         self.assign = self.createDropdown((h+1,o+1), ['Poly 1', 'Poly 2', 'Unison'], start = 'Poly 1')
-        self.createText((h+2,o), 'Unison Voices')
+        self.createText((h+2,o), 'Uni Voices')
         self.unia = self.createDropdown((h+2,o+1), [1,2,4,8], start = 4)
-        self.createText((h+3,o), 'Unison Detune')
+        self.createText((h+3,o), 'Uni Detune')
         self.unid = self.createSlider((h+3,o+1), [0,7], start = 4)
-
-
-

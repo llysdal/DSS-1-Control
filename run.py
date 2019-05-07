@@ -36,7 +36,9 @@ dss.setPlayMode()
 dss.getNameList()
 
 #Start GUI
-gui = GUI.DSS1gui()
+gui = GUI.DSS1gui(titlefont = ('Microgramma D Extended', 16), 
+                  textfont  = ('Lucida Sans', 11), 
+                  numberfont= ('Lucida Sans', 8))
 
     #VCA Kbd Decay might be fucked!
 def getParams():
@@ -58,6 +60,7 @@ def saveProgram():
 
 def updateName():
     dss.getNameList()
+    dss.programChange(int(gui.prog.get())-1)
     gui.progname.delete(0, 100)
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
 

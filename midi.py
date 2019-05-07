@@ -34,6 +34,9 @@ def receiveMidi(device):
     message = device.read(1000)
     return message
 
+def sendMidi(device, status, data1, data2):
+    device.write_short(status, data1, data2)
+
 def sendSysex(device, message):  
     device.write_sys_ex(0, bytes(message))
     

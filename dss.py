@@ -142,6 +142,10 @@ class DSS():
     def setPlayMode(self):
         midi.sendSysex(self.output, sysexSet['playmode'])
 
+    #Changes program
+    def programChange(self, program):
+        midi.sendMidi(self.output, 192, program, 0)
+
     #Gets the program names on the synth
     def getNameList(self):
         midi.sendSysex(self.output, sysexGet['programlist'])
