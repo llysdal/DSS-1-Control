@@ -73,8 +73,8 @@ getParams()
 
 def updateTask():
     #EG Curves    
-    gui.egUpdate(gui.egfc, (gui.egfa, gui.egfd, gui.egfb, gui.egfsl, gui.egfs, gui.egfr))
-    gui.egUpdate(gui.egvc, (gui.egva, gui.egvd, gui.egvb, gui.egvsl, gui.egvs, gui.egvr))
+    gui.egUpdate(gui.egfc, (gui.egfat, gui.egfdt, gui.egfslt, gui.egfrt), (gui.egfa, gui.egfd, gui.egfb, gui.egfsl, gui.egfs, gui.egfr))
+    gui.egUpdate(gui.egvc, (gui.egvat, gui.egvdt, gui.egvslt, gui.egvrt), (gui.egva, gui.egvd, gui.egvb, gui.egvsl, gui.egvs, gui.egvr))
 
     #GUI functions
     com = gui.execcommand

@@ -69,6 +69,15 @@ class Application(Frame):
         
         return label
 
+    def createDynText(self, gridpos, columnspan = 1):
+        stringvar = StringVar()
+        
+        label = Label(self, textvariable = stringvar, font = self.numberfont, justify = 'left')
+        label.configure(background = self.black, foreground = self.white)
+        label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+N)
+
+        return stringvar
+
     def createCheckbutton(self, gridpos, text, columnspan = 1):
         intvar = IntVar()
 
@@ -98,7 +107,7 @@ class DSS1gui(Application):
         self.execcommand = 0
 
 
-    def egUpdate(self, canvas, egpar):
+    def egUpdate(self, canvas, dyntext, egpar):
 
         #Canvas
         w,h = canvas.winfo_width(), canvas.winfo_height()
@@ -117,10 +126,21 @@ class DSS1gui(Application):
         canvas.create_line((sustain[0], sustain[1], release[0], release[1]), fill = '#2b7cff')
 
         #Text
-        attackTime  = 2.06395*exp(0,14572*egpar[0].get())
-        decayTime   = 16.82948*exp(0,11124*egpar[1].get())
-        slopeTime   = 2.06395*exp(0,14572*egpar[3].get())
-        releaseTime = 16.82948*exp(0,11124*egpar[1].get())
+        attackTime  = 5*exp(0.15*egpar[0].get())
+        decayTime   = 5*exp(0.135*egpar[1].get())
+        slopeTime   = 5*exp(0.15*egpar[3].get())
+        releaseTime = 5*exp(0.135*egpar[5].get())
+
+        #print('decay = ' + str(egpar[1].get()) + '  -  ' + str(decayTime))
+
+        for i, time in enumerate((attackTime, decayTime, slopeTime, releaseTime)):
+            if time < 9.9:
+                dyntext[i].set('{0:.1g}ms'.format(min(time,9)))
+            elif time < 99:
+                dyntext[i].set('{0:.2g}ms'.format(min(time,99)))
+            else:
+                dyntext[i].set('{0:.2g}s'.format(time/1000))
+
 
 
 
@@ -412,6 +432,12 @@ class DSS1gui(Application):
         self.egfsl= self.createSlider((19,o+3), (63,0), start = 0, orient = 1, span=(2,1))
         self.egfs = self.createSlider((19,o+4), (63,0), start = 0, orient = 1, span=(2,1))
         self.egfr = self.createSlider((19,o+5), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egfat = self.createDynText((21,o))
+        self.egfdt = self.createDynText((21,o+1))
+        #self.egfbt = self.createDynText((21,o+2))
+        self.egfslt= self.createDynText((21,o+3))
+        #self.egfst = self.createDynText((21,o+4))
+        self.egfrt = self.createDynText((21,o+5))
         o += 6
 
         #Gap
@@ -437,6 +463,12 @@ class DSS1gui(Application):
         self.egvsl= self.createSlider((19,o+3), (63,0), start = 0, orient = 1, span=(2,1))
         self.egvs = self.createSlider((19,o+4), (63,0), start = 0, orient = 1, span=(2,1))
         self.egvr = self.createSlider((19,o+5), (63,0), start = 0, orient = 1, span=(2,1))
+        self.egvat = self.createDynText((21,o))
+        self.egvdt = self.createDynText((21,o+1))
+        #self.egvbt = self.createDynText((21,o+2))
+        self.egvslt= self.createDynText((21,o+3))
+        #self.egvst = self.createDynText((21,o+4))
+        self.egvrt = self.createDynText((21,o+5))
         o += 6
 
         #Gap
