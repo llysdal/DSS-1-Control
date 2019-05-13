@@ -26,28 +26,20 @@ gui = GUI.DSS1gui(titlefont = ('Microgramma D Extended', 16),
 
 #GUI functions
 def getParams():
-    if not dss.getParameters(int(gui.prog.get())-1):
-        print('Couldn\'t get parameters')
-
-    parList = []
-    for i, key in enumerate(dss.param.keys()):
-        parList.append(dss.param[key]['v'])
-
-    gui.progname.delete(0, 100)
-    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
-    gui.setValues(parList)
+    dss.getParameters(int(gui.prog.get())-1)
 
 def setParams():
     dss.setParameters(gui.progname.get())
 
 def saveProgram():
     dss.saveProgram(int(gui.prog.get())-1)
-
-def updateName():
     dss.getNameList()
+
+def changeProgram():
     dss.programChange(int(gui.prog.get())-1)
-    gui.progname.delete(0, 100)
-    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
+
+    if gui.autoget.get():
+        getParams()
 
 def saveFile():
     name = gui.progname.get()
@@ -59,16 +51,32 @@ def loadFile():
     if fh.checkFile(name):
         dss.loadParameters(name)
         print('Loaded ' + name + ' successfully')
-
-        parList = []
-        for key in dss.param.keys():
-            parList.append(dss.param[key]['v'])
-        gui.setValues(parList)
     else:
         print('\'' + name + '\' not found')
 
+def updateControl():
+    #Program name
+    gui.progname.delete(0, 100)
+    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
+
+    #Parameters
+    parList = []
+    for i, key in enumerate(dss.param.keys()):
+        parList.append(dss.param[key]['v'])
+
+    gui.progname.delete(0, 100)
+    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
+    gui.setValues(parList)
 
 getParams()
+
+#Startup sysex handling (handle all of the queue)
+while True:
+    sysex = midi.getSysex(dss.input)
+    if sysex[0]:
+        dss.decodeSysex(sysex[1])
+    else:
+        break
 
 
 def updateTask():
@@ -86,8 +94,8 @@ def updateTask():
             setParams()
         elif com == 'saveprogram':
             saveProgram()
-        elif com == 'updatename':
-            updateName()
+        elif com == 'changeprogram':
+            changeProgram()
         elif com == 'savefile':
             saveFile()
         elif com == 'loadfile':
@@ -95,7 +103,17 @@ def updateTask():
 
         gui.execCom(0)
 
-    
+   
+
+
+    #Check for sysex messages
+    sysex = midi.getSysex(dss.input)
+    if sysex[0]:
+        dss.decodeSysex(sysex[1])
+
+    if dss.updateGUI:
+        updateControl()
+        dss.updateGUI = False
 
     #Control check
     values = gui.getValues()
@@ -104,7 +122,7 @@ def updateTask():
             dss.param[key]['v'] = values[i]
             dss.setKey(key)
 
-    gui.after(10, updateTask)
+    gui.after(50, updateTask)
 
 
 

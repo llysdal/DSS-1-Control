@@ -106,6 +106,9 @@ class DSS1gui(Application):
 
         self.execcommand = 0
 
+        #Workaround
+        self.oscrange = 0
+
 
     def egUpdate(self, canvas, dyntext, egpar):
 
@@ -208,6 +211,7 @@ class DSS1gui(Application):
         self.d2mi.set(values[57])
         self.osc1w.set(values[58]+1)
         self.osc2w.set(values[59]+1)
+        self.oscrange = values[60]
         self.osc2s.set(values[61])
         self.oscres.set(('6 bits', '7 bits', '8 bits', '10 bits', '12 bits')[values[62]])
         self.osc1o.set((16,8,4)[values[63]])
@@ -287,7 +291,7 @@ class DSS1gui(Application):
                 self.d2mi.get(),
                 int(self.osc1w.get())-1,
                 int(self.osc2w.get())-1,
-                12,                     #?
+                self.oscrange,
                 self.osc2s.get(),
                 ('6 bits', '7 bits', '8 bits', '10 bits', '12 bits').index(self.oscres.get()),
                 (16,8,4).index(int(self.osc1o.get())),
@@ -314,14 +318,23 @@ class DSS1gui(Application):
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
 
         self.menu = self.createMenu()
+
+        optionmenu = Menu(self.menu, tearoff=0)
+        self.autoget = IntVar()
+        optionmenu.add_checkbutton(label="Autoget parameters", variable=self.autoget)
+        self.menu.add_cascade(label='Options', menu=optionmenu)
+        self.menu.add_separator()
+
         self.menu.add_command(label='Get Parameters', command = lambda: self.execCom('getparameters'))
         self.menu.add_command(label='Set Parameters', command = lambda: self.execCom('setparameters'))
         self.menu.add_command(label='Save Program',   command = lambda: self.execCom('saveprogram'))
+        self.menu.add_separator()
         
 
         localmenu = Menu(self.menu, tearoff=0)
         localmenu.add_command(label='Save to file',   command = lambda: self.execCom('savefile'))
         localmenu.add_command(label='Load from file', command = lambda: self.execCom('loadfile'))
+        
         self.menu.add_cascade(label='Local', menu=localmenu)
 
         #Background
@@ -338,7 +351,7 @@ class DSS1gui(Application):
 
     #Program management
         self.createText((0,1), 'Program', stick = W+S)
-        self.prog = Spinbox(self, from_=1, to=32, width = 2, command = lambda: self.execCom('updatename'))
+        self.prog = Spinbox(self, from_=1, to=32, width = 2, command = lambda: self.execCom('changeprogram'))
         self.prog.grid(row = 0, column = 2, sticky = E+S)
 
         self.progname = Entry(self, width = 12)

@@ -3,7 +3,9 @@ midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
 
+exclst = 0b11110000
 korgID = 0b01000010
+formID = 0b00110000 #Controls the receive channel, configured as 1 here.
 dss1ID = 0b00001011
 
 sysexGet = {'mode'          : [0xF0, 0x42, 0x30, 0x0B, 0x12, 0xF7],
@@ -21,6 +23,8 @@ class DSS():
         self.input  = midi.getMidiInputDevice(inputID)
         self.output = midi.getMidiOutputDevice(outputID)
         
+        self.updateGUI = False
+        self.debug = True
         #Assume he's in playmode
         self.mode = 0
         #Namelist
@@ -111,55 +115,17 @@ class DSS():
                       'assign'          :   {'l': 0, 'h':   2, 'v':   1},   #poly2, poly1, unison
                       'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   3}}   #amount of unison voices
 
-    #Gets the current mode
-    def getMode(self):
-        midi.sendSysex(self.output, sysexGet['mode'])
-
-        received, sysex = midi.getSysex(self.input)
-
-        #Sysexcheck
-        if received:
-            if sysex[0:5] == [0xF0, 0x42, 0x30, 0x0B, 0x42]:
-                #Read mode
+    def decodeSysex(self, sysex):
+        #Check if the sysex message is for us.
+        if sysex[0:4] == [exclst, korgID, formID, dss1ID]:
+            if sysex[4] == 0x42:
+                #Mode Data
+                if self.debug: print('R: Mode data')
                 self.mode = sysex[5]
 
-                return True
-        return False
-
-    #Sets the mode to playmode
-    def setPlayMode(self):
-        midi.sendSysex(self.output, sysexSet['playmode'])
-
-    #Changes program
-    def programChange(self, program):
-        midi.sendMidi(self.output, 192, program, 0)
-
-    #Gets the program names on the synth
-    def getNameList(self):
-        midi.sendSysex(self.output, sysexGet['programlist'])
-
-        received, sysex = midi.getSysex(self.input)
-
-        #Sysexcheck
-        if received:
-            if sysex[0:5] == [0xF0, 0x42, 0x30, 0x0B, 0x46]:
-                #Names received, put them in self.namelist
-                for i in range(32):
-                    self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
-
-                return True
-        return False
-
-    #Gets the multisounds on the synth
-    def getMultisoundsList(self):
-        midi.sendSysex(self.output, sysexGet['multisoundlist'])
-
-        received, sysex = midi.getSysex(self.input)
-
-        #Sysexcheck
-        if received:
-            if sysex[0:5] == [0xF0, 0x42, 0x30, 0x0B, 0x45]:
-                #Multisoundlist received, clearing previous multisoundlist
+            elif sysex[4] == 0x45:
+                #Multi Sound List
+                if self.debug: print('R: Multi sound name list')
                 self.multiLen = []
                 self.multiName = []
 
@@ -173,29 +139,28 @@ class DSS():
                         lenSum = sysex[6+14*i+8:6+14*i+14][5-u] * 2**u
                     self.multiLen.append(lenSum)
 
-                return True
-        return False
+            elif sysex[4] == 0x44:
+                #Multi Sound Parameter Dump
+                if self.debug: print('R: Multi sound parameters')
+                pass
 
+            elif sysex[4] == 0x43:
+                #PCM Data Dump
+                if self.debug: print('R: PCM data dump')
+                pass
+
+            elif sysex[4] == 0x46:
+                #Program Name List
+                if self.debug: print('R: Program name list')
+                for i in range(32):
+                    self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
                     
+                self.updateGUI = True
 
-    #Not realtime. Can only get parameters saved in memory
-    def getParameters(self, program):
-        #Getting the sysex command
-        sysex = sysexGet['parameters'].copy()
+            elif sysex[4] == 0x40:
+                #Program Parameter Dump
+                if self.debug: print('R: Program parameters')
 
-        #Replacing the pointer with the program
-        sysex[sysex.index('program')] = program
-
-        #Sending the sysex request to the DSS-1
-        midi.sendSysex(self.output, sysex)
-        
-        #Seeing if we recieved the message, and putting it in sysex
-        received, sysex = midi.getSysex(self.input)
-
-        #Sysexcheck
-        if received:
-            if sysex[0:5] == [0xF0, 0x42, 0x30, 0x0B, 0x40]:
-                
                 sysex = sysex[5:-1]
                 #Replace the stored parameters with the sysex gotten ones
                 for i, key in enumerate(self.param.keys()):
@@ -208,11 +173,62 @@ class DSS():
                         sysex.pop(0)
                         sysex.pop(0)
                 
-                return True
-        return False
+                self.updateGUI = True
 
-    #Sets a single parameter
+            elif sysex[4] == 0x23:
+                #Data Load Completed
+                if self.debug: print('R: Data load complete')
+                pass
+
+            elif sysex[4] == 0x24:
+                #Data Load Error
+                if self.debug: print('R: Data load error')
+                pass
+
+            elif sysex[4] == 0x21:
+                #Write Completed
+                if self.debug: print('R: Write complete')
+                pass
+
+            elif sysex[4] == 0x22:
+                #Write Error
+                if self.debug: print('R: Write error')
+                pass
+
+
+    def getMode(self):
+        midi.sendSysex(self.output, sysexGet['mode'])
+
+    def setPlayMode(self):
+        if self.debug: print('T: Set mode to playmode')
+        midi.sendSysex(self.output, sysexSet['playmode'])
+
+    def programChange(self, program):
+        if self.debug: print('T: Changing program to '+ str(program+1))
+        midi.sendMidi(self.output, 192, program, 0)
+        self.updateGUI = True
+
+    def getNameList(self):
+        if self.debug: print('T: Get program name list')
+        midi.sendSysex(self.output, sysexGet['programlist'])
+
+    def getMultisoundsList(self):
+        if self.debug: print('T: Get multi sound list')
+        midi.sendSysex(self.output, sysexGet['multisoundlist'])         
+
+    def getParameters(self, program):
+        if self.debug: print('T: Get all parameters from program ' + str(program+1))
+        #Getting the sysex command
+        sysex = sysexGet['parameters'].copy()
+
+        #Replacing the pointer with the program
+        sysex[sysex.index('program')] = program
+
+        #Sending the sysex request to the DSS-1
+        midi.sendSysex(self.output, sysex)
+
     def setParameter(self, parameter, value):
+        if self.debug: print('T: Set parameter ' + str(parameter) + ' to ' + str(value))
         #Get sysex command
         sysex = sysexSet['parameter'].copy()
 
@@ -229,15 +245,14 @@ class DSS():
     
         midi.sendSysex(self.output, sysex)
 
-    #Same as above, but copies a key from the emulated python DSS-1 to the real DSS-1
     def setKey(self, key):
         parNum = list(self.param.keys()).index(key)
         parVal = self.param[key]['v']
 
         self.setParameter(parNum, parVal)
         
-    #Sets all parameters and assigns the patch a name
     def setParameters(self, name):
+        if self.debug: print('T: Set all parameters and send the name \"' + name + '\"')
         while len(name) < 8:
             name += ' '
         nameList = list(map(ord, name[0:8]))
@@ -264,9 +279,8 @@ class DSS():
         #Send the finalized sysex patch
         midi.sendSysex(self.output, sysex)
 
-
-    #Saves the loaded values into a program on the DSS1
     def saveProgram(self, program):
+        if self.debug: print('T: Save program as program ' + str(program+1))
         #Getting the sysex command
         sysex = sysexSet['writeprogram'].copy()
 
@@ -290,3 +304,5 @@ class DSS():
 
         for i, key in enumerate(self.param.keys()):
             self.param[key]['v'] = parList[i]
+
+        self.updateGUI = True

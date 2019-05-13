@@ -58,6 +58,9 @@ def sendSysex(device, message):
 def checkSysex(device):
     data = receiveMidi(device)
 
+    if not data:
+        return False, data
+
     if 0xF0 in data[0][0]:
         return True, data
     else:
@@ -71,16 +74,18 @@ def getSysex(device):
         If no sysex was found, returns false
         If sysex was found, returns True and the sysex message'''
 
-    for attempt in range(1000):
+    for attempt in range(1):
         present, data = checkSysex(device)
 
         if present:
             break
 
+        t.delay(0.01)
+
     if not present:
         return False, []
 
-    sysex = [*data[0][0]]
+    sysex = list(data[0][0])
 
     while True:
         data = receiveMidi(device)
@@ -88,10 +93,12 @@ def getSysex(device):
         if data == False:
             return False, []
 
-        sysex.append(*data[0][0])
+        sysex[len(sysex):len(sysex)] = data[0][0]
 
         if 0xF7 in data[0][0]:
-            return True, sysex
+            return True, sysex[0:sysex.index(0xF7)+1]
+
+        t.delay(0.005)
 
 
 
