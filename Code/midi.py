@@ -1,7 +1,7 @@
 from pygame import midi
+t = __import__('tools')
 
 midi.init()
-
 
 #Gets all available midi devices, and information about them.
 def getMidiDevices():
@@ -36,9 +36,18 @@ def getMidiOutputDevice(id):
 def clearMidi(device):
     device.read(1000)
 
-def receiveMidi(device):
+def receiveAllMidi(device):
     message = device.read(1000)
     return message
+
+def receiveMidi(device):
+    dataPresent = device.poll()
+
+    if dataPresent:
+        message = device.read(1)
+        return message
+    else:
+        return False
 
 def sendMidi(device, status, data1, data2):
     device.write_short(status, data1, data2)
@@ -46,10 +55,50 @@ def sendMidi(device, status, data1, data2):
 def sendSysex(device, message):  
     device.write_sys_ex(0, bytes(message))
     
+def checkSysex(device):
+    data = receiveMidi(device)
+
+    if 0xF0 in data[0][0]:
+        return True, data
+    else:
+        return False, data
+
 def getSysex(device):
+    ''' Reads a sysex message from the device input.
+        Returns it as a tuple with a value for each hexadecimal value (00 to FF)
+        Always starts with a 0xF0, and ends with a 0xF7
+
+        If no sysex was found, returns false
+        If sysex was found, returns True and the sysex message'''
+
+    for attempt in range(1000):
+        present, data = checkSysex(device)
+
+        if present:
+            break
+
+    if not present:
+        return False, []
+
+    sysex = [*data[0][0]]
+
+    while True:
+        data = receiveMidi(device)
+
+        if data == False:
+            return False, []
+
+        sysex.append(*data[0][0])
+
+        if 0xF7 in data[0][0]:
+            return True, sysex
+
+
+
+def getSysexLegacy(device):
     sysex = []
     
-    data = receiveMidi(device)
+    data = receiveAllMidi(device)
     
     if data == []:
         return False, []

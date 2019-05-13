@@ -115,7 +115,6 @@ class DSS():
     def getMode(self):
         midi.sendSysex(self.output, sysexGet['mode'])
 
-        t.delay()
         received, sysex = midi.getSysex(self.input)
 
         #Sysexcheck
@@ -139,7 +138,6 @@ class DSS():
     def getNameList(self):
         midi.sendSysex(self.output, sysexGet['programlist'])
 
-        t.delay()
         received, sysex = midi.getSysex(self.input)
 
         #Sysexcheck
@@ -156,7 +154,6 @@ class DSS():
     def getMultisoundsList(self):
         midi.sendSysex(self.output, sysexGet['multisoundlist'])
 
-        t.delay()
         received, sysex = midi.getSysex(self.input)
 
         #Sysexcheck
@@ -192,7 +189,6 @@ class DSS():
         #Sending the sysex request to the DSS-1
         midi.sendSysex(self.output, sysex)
         
-        t.delay()
         #Seeing if we recieved the message, and putting it in sysex
         received, sysex = midi.getSysex(self.input)
 
@@ -233,6 +229,7 @@ class DSS():
     
         midi.sendSysex(self.output, sysex)
 
+    #Same as above, but copies a key from the emulated python DSS-1 to the real DSS-1
     def setKey(self, key):
         parNum = list(self.param.keys()).index(key)
         parVal = self.param[key]['v']
