@@ -1,15 +1,17 @@
 fh = __import__('filehandler')
-from tkinter import *
+import tkinter as tk
+from tkinter import N,S,E,W, HORIZONTAL, VERTICAL
 from math import exp
 
 
-class Application(Frame):
-    def init(self, titlefont, textfont, numberfont):
-        Frame.__init__(self, None)
-        self.grid(sticky=N+S+E+W)
+class Application():
+    def init(self, master, titlefont, textfont, numberfont):
+        self.master = master
+        self.frame = tk.Frame(self.master)
+        self.frame.grid(sticky=N+S+E+W)
 
         #Resizeability
-        self.top = self.winfo_toplevel()
+        self.top = self.frame.winfo_toplevel()
         self.top.rowconfigure(0, weight=1)
         self.top.columnconfigure(0, weight=1)
 
@@ -22,16 +24,16 @@ class Application(Frame):
         self.textfont = textfont
         self.numberfont = numberfont
 
-        self.configure(background = self.black)
+        self.frame.configure(background = self.black)
 
     def createCanvas(self, gridpos, columnspan = 1, rowspan = 1, size = (100,100)):
-        canvas = Canvas(self, width = size[0], height = size[1], bg = 'black')
+        canvas = tk.Canvas(self.frame, width = size[0], height = size[1], bg = 'black')
         canvas.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, rowspan = rowspan, sticky = N+S+E+W)
 
         return canvas
     
     def createSlider(self, gridpos, val, res = 1, start = 0, length = 100, width = 15, orient = 0, span = (1,1), showvalue = True, stick = E+S):
-        slider = Scale(self, from_ = val[0], to = val[1], resolution = res,\
+        slider = tk.Scale(self.frame, from_ = val[0], to = val[1], resolution = res,\
                        orient = (HORIZONTAL, VERTICAL)[orient], length = length, showvalue = showvalue, width = width)
         slider.configure(background = self.black, foreground = self.white, highlightthickness = 0, troughcolor = self.grey, activebackground = self.white, font = self.numberfont)
         slider.grid(row = gridpos[0], column = gridpos[1], rowspan = span[0], columnspan = span[1], sticky = stick)
@@ -41,67 +43,77 @@ class Application(Frame):
         return slider
         
     def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1):
-        string = StringVar()
+        string = tk.StringVar()
         string.set(start)
     
-        dropdown = OptionMenu(self, string, *values)
+        dropdown = tk.OptionMenu(self.frame, string, *values)
         dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2)#, activebackground = self.blue)
         dropdown.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
         
         return string
         
     def createButton(self, gridpos, text, function):
-        button = Button(self, text = text, command = function)
+        button = tk.Button(self.frame, text = text, command = function)
         button.configure(background = self.black, foreground = self.white)
         button.grid(row = gridpos[0], column = gridpos[1], stick = N+S+E+W)
     
     def createText(self, gridpos, text, columnspan = 1, stick = W+S):
-        label = Label(self, text = text, font = self.textfont, justify = 'left')
+        label = tk.Label(self.frame, text = text, font = self.textfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = stick)
         
         return label
 
     def createTitle(self, gridpos, text, columnspan = 1):
-        label = Label(self, text = text, font = self.titlefont, justify = 'left')
+        label = tk.Label(self.frame, text = text, font = self.titlefont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+W)
         
         return label
 
     def createDynText(self, gridpos, columnspan = 1):
-        stringvar = StringVar()
+        stringvar = tk.StringVar()
         
-        label = Label(self, textvariable = stringvar, font = self.numberfont, justify = 'left')
+        label = tk.Label(self.frame, textvariable = stringvar, font = self.numberfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+N)
 
         return stringvar
 
     def createCheckbutton(self, gridpos, text, columnspan = 1):
-        intvar = IntVar()
+        intvar = tk.IntVar()
 
-        button = Checkbutton(self, text = text, variable = intvar, onvalue = 1, offvalue = 0)
+        button = tk.Checkbutton(self.frame, text = text, variable = intvar, onvalue = 1, offvalue = 0)
         button.configure(background = self.black)#, activebackground = self.blue)
         button.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
 
         return intvar
 
     def createMenu(self):
-        menubar = Menu(self)
+        menubar = tk.Menu(self.frame)
         self.top.config(menu=menubar)
 
         return menubar
 
     def minSizeH(self, pos, width):
-        self.columnconfigure(pos, minsize = width)
+        self.frame.columnconfigure(pos, minsize = width)
         
     def minSizeV(self, pos, width):
-        self.rowconfigure(pos, minsize = width)
+        self.frame.rowconfigure(pos, minsize = width)
        
-class DSS1gui(Application):
-    def __init__(self, titlefont, textfont, numberfont):
-        self.init(titlefont, textfont, numberfont)
+class DSS1multi(Application):
+    def __init__(self, master, titlefont, textfont, numberfont):
+        self.init(master, titlefont, textfont, numberfont)
+        self.setup()
+
+        self.execcommand = 0
+
+    def setup(self):
+        self.createText((0,0), 'Test')
+
+class DSS1main(Application):
+    def __init__(self, master, titlefont, textfont, numberfont):
+        self.init(master, titlefont, textfont, numberfont)
         self.setup()
 
         self.execcommand = 0
@@ -317,10 +329,14 @@ class DSS1gui(Application):
         self.master.title('Korg DSS-1 Main Control')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
 
+        self.multWindow = tk.Toplevel(self.master)
+
+        self.multapp = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
+
         self.menu = self.createMenu()
 
-        optionmenu = Menu(self.menu, tearoff=0)
-        self.autoget = IntVar()
+        optionmenu = tk.Menu(self.menu, tearoff=0)
+        self.autoget = tk.IntVar()
         optionmenu.add_checkbutton(label="Autoget parameters", variable=self.autoget)
         self.menu.add_cascade(label='Options', menu=optionmenu)
         self.menu.add_separator()
@@ -331,15 +347,15 @@ class DSS1gui(Application):
         self.menu.add_separator()
         
 
-        localmenu = Menu(self.menu, tearoff=0)
+        localmenu = tk.Menu(self.menu, tearoff=0)
         localmenu.add_command(label='Save to file',   command = lambda: self.execCom('savefile'))
         localmenu.add_command(label='Load from file', command = lambda: self.execCom('loadfile'))
         
         self.menu.add_cascade(label='Local', menu=localmenu)
 
         #Background
-        backimage = PhotoImage(file = fh.getRessourcePath('background.png'))
-        backlabel = Label(self, image=backimage, bd = 0)
+        backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))
+        backlabel = tk.Label(self.frame, image=backimage, bd = 0)
         #backlabel.place(x=0, y=0)
         backlabel.image = backimage
 
@@ -351,10 +367,10 @@ class DSS1gui(Application):
 
     #Program management
         self.createText((0,1), 'Program', stick = W+S)
-        self.prog = Spinbox(self, from_=1, to=32, width = 2, command = lambda: self.execCom('changeprogram'))
+        self.prog = tk.Spinbox(self.frame, from_=1, to=32, width = 2, command = lambda: self.execCom('changeprogram'))
         self.prog.grid(row = 0, column = 2, sticky = E+S)
 
-        self.progname = Entry(self, width = 12)
+        self.progname = tk.Entry(self.frame, width = 12)
         self.progname.grid(row = 1, column = 2, sticky = E+N)
 
         o = 1

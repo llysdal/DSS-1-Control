@@ -19,9 +19,13 @@ dss.setPlayMode()
 dss.getNameList()
 
 #Start GUI
-gui = GUI.DSS1gui(titlefont = ('Microgramma D Extended', 16), 
+root = GUI.tk.Tk()
+gui = GUI.DSS1main(root,
+                  titlefont = ('Microgramma D Extended', 16), 
                   textfont  = ('Lucida Sans', 11), 
                   numberfont= ('Lucida Sans', 8))
+
+
 
 
 #GUI functions
@@ -122,10 +126,10 @@ def updateTask():
             dss.param[key]['v'] = values[i]
             dss.setKey(key)
 
-    gui.after(50, updateTask)
+    gui.frame.after(50, updateTask)
 
 
 
-gui.master.protocol("WM_DELETE_WINDOW", lambda: quit())
+root.protocol("WM_DELETE_WINDOW", lambda: quit())
 updateTask()
-gui.master.mainloop()
+root.mainloop()
