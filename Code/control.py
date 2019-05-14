@@ -1,6 +1,6 @@
 fh = __import__('filehandler')
 import tkinter as tk
-from tkinter import N,S,E,W, HORIZONTAL, VERTICAL
+from tkinter import N,S,E,W, HORIZONTAL, VERTICAL, BROWSE
 from math import exp
 
 
@@ -108,8 +108,27 @@ class DSS1multi(Application):
 
         self.execcommand = 0
 
+    def execCom(self, val):
+        self.execcommand = val
+
     def setup(self):
+        self.master.title('Korg DSS-1 Multisound Control')
+        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+
+        self.menu = self.createMenu()
+        self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
+        self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
+
         self.createText((0,0), 'Test')
+
+        self.multisound = tk.Listbox(self.master, selectmode=BROWSE)
+        for i in range(16):
+            self.multisound.insert(1000, str(i))
+        self.multisound.grid(row = 0, column = 0)
+
+        self.createText((1,3), 'Other test')
+
+
 
 class DSS1main(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
@@ -157,7 +176,10 @@ class DSS1main(Application):
                 dyntext[i].set('{0:.2g}s'.format(time/1000))
 
 
-
+    def openMultisoundGUI(self):
+        self.multWindow.deiconify()
+        
+        
 
     def execCom(self, val):
         self.execcommand = val
@@ -322,7 +344,6 @@ class DSS1main(Application):
                 ('Poly 1', 'Poly 2', 'Unison').index(self.assign.get()),
                 (1,2,4,8).index(int(self.unia.get())))
 
-#Gui
     #Gui setup, this is gonna be long
     #Dont touch anything here please
     def setup(self):
@@ -330,8 +351,9 @@ class DSS1main(Application):
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
 
         self.multWindow = tk.Toplevel(self.master)
-
         self.multapp = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
+        self.multWindow.withdraw()
+        self.multWindow.protocol("WM_DELETE_WINDOW", lambda: self.multWindow.withdraw())
 
         self.menu = self.createMenu()
 
@@ -350,8 +372,10 @@ class DSS1main(Application):
         localmenu = tk.Menu(self.menu, tearoff=0)
         localmenu.add_command(label='Save to file',   command = lambda: self.execCom('savefile'))
         localmenu.add_command(label='Load from file', command = lambda: self.execCom('loadfile'))
-        
         self.menu.add_cascade(label='Local', menu=localmenu)
+
+        self.menu.add_separator()
+        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI())
 
         #Background
         backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))
