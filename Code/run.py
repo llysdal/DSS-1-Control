@@ -14,9 +14,10 @@ dss = DSS.DSS(i,o)
 #Attempt communication
 t.comCheck(dss)
 
-#Get program names
+#Get startinformation
 dss.setPlayMode()
 dss.getNameList()
+dss.getMultisoundsList()
 
 #Start GUI
 root = GUI.tk.Tk()
@@ -59,7 +60,7 @@ def loadFile():
         print('\'' + name + '\' not found')
 
 def updateControl():
-    #Program name
+    #Program list
     gui.progname.delete(0, 100)
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
 
@@ -71,6 +72,14 @@ def updateControl():
     gui.progname.delete(0, 100)
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
     gui.setValues(parList)
+
+    #Multisound list
+    gui.mult.multisound.delete(0, 100)
+    multiNameGui = dss.multiName.copy()
+    while len(multiNameGui) < 16:
+        multiNameGui.append('EMPTY')
+    for num in range(16):
+        gui.mult.multisound.insert(num, multiNameGui[num])
 
 getParams()
 
@@ -104,6 +113,8 @@ def updateTask():
             saveFile()
         elif com == 'loadfile':
             loadFile()
+        elif com == 'updatecontrol':
+            updateControl()
 
         gui.execCom(0)
 

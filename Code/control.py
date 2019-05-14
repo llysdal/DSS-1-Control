@@ -119,14 +119,13 @@ class DSS1multi(Application):
         self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
         self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
 
-        self.createText((0,0), 'Test')
+        self.createTitle((0,0), 'Multisound')
 
-        self.multisound = tk.Listbox(self.master, selectmode=BROWSE)
+        self.multisound = tk.Listbox(self.frame, selectmode=BROWSE, height = 16)
         for i in range(16):
-            self.multisound.insert(1000, str(i))
-        self.multisound.grid(row = 0, column = 0)
+            self.multisound.insert(1000, str(i+1))
+        self.multisound.grid(row = 1, column = 0, rowspan = 10, sticky = E+W+N+S)
 
-        self.createText((1,3), 'Other test')
 
 
 
@@ -351,7 +350,7 @@ class DSS1main(Application):
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
 
         self.multWindow = tk.Toplevel(self.master)
-        self.multapp = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
+        self.mult = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
         self.multWindow.withdraw()
         self.multWindow.protocol("WM_DELETE_WINDOW", lambda: self.multWindow.withdraw())
 
@@ -375,7 +374,7 @@ class DSS1main(Application):
         self.menu.add_cascade(label='Local', menu=localmenu)
 
         self.menu.add_separator()
-        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI())
+        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI() and self.execCom('updatecontrol'))
 
         #Background
         backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))

@@ -138,6 +138,8 @@ class DSS():
                     for u in range(6):
                         lenSum = sysex[6+14*i+8:6+14*i+14][5-u] * 2**u
                     self.multiLen.append(lenSum)
+                
+                self.updateGUI = True
 
             elif sysex[4] == 0x44:
                 #Multi Sound Parameter Dump
