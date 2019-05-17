@@ -4,17 +4,20 @@ midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
 
+#Preinit config
+configPresent, config = fh.getConfig()
+
+#Handle config
+pass
+
 #Chose MIDI input and Output
 devices = midi.getMidiDevices()
-i, o = t.chooseDevices(devices)
+mIn, mOut = t.chooseDevices(devices, config)
 
 #Setup DSS1 communication
-dss = DSS.DSS(i,o)
+dss = DSS.DSS(mIn, mOut)
 
-#Attempt communication
-t.comCheck(dss)
-
-#Get startinformation
+#Get start information
 dss.setPlayMode()
 dss.getNameList()
 dss.getMultisoundsList()
@@ -25,8 +28,6 @@ gui = GUI.DSS1main(root,
                   titlefont = ('Microgramma D Extended', 16), 
                   textfont  = ('Lucida Sans', 11), 
                   numberfont= ('Lucida Sans', 8))
-
-
 
 
 #GUI functions
@@ -48,16 +49,14 @@ def changeProgram():
 
 def saveFile():
     name = gui.progname.get()
-    dss.saveParameters(name)
-    print('Saved ' + name + ' successfully')
+    fh.savePatch(name, dss.extractParameters())
 
 def loadFile():
     name = gui.progname.get()
-    if fh.checkFile(name):
-        dss.loadParameters(name)
-        print('Loaded ' + name + ' successfully')
-    else:
-        print('\'' + name + '\' not found')
+    if fh.checkPatch(name):
+        dss.putParameters(fh.loadPatch(name))
+        dss.setParameters(name)
+        
 
 def updateControl():
     #Program list
@@ -73,7 +72,29 @@ def updateControl():
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
     gui.setValues(parList)
 
-    #Multisound list
+    #Multisound list - main window
+    #Fetch current multisound values
+    osc1 = min(gui.oscms.index(gui.osc1w.get()), len(gui.oscms)-1)
+    osc2 = min(gui.oscms.index(gui.osc2w.get()), len(gui.oscms)-1)
+    #Set new multisound names
+    if len(dss.multiName) > 0:
+        gui.oscms = dss.multiName
+    
+    m = gui.osc1wo.children['menu']
+    m.delete(0,16)
+    for i in range(len(gui.oscms)):
+        m.add_command(label=gui.oscms[i], command=lambda value=gui.oscms[i]: gui.osc1w.set(value))
+
+    m = gui.osc2wo.children['menu']
+    m.delete(0,16)
+    for i in range(len(gui.oscms)):
+        m.add_command(label=gui.oscms[i], command=lambda value=gui.oscms[i]: gui.osc2w.set(value))
+
+    #Set values to new option values
+    gui.osc1w.set(gui.oscms[osc1])
+    gui.osc2w.set(gui.oscms[osc2])
+
+    #Multisound list - multisound window
     gui.mult.multisound.delete(0, 100)
     multiNameGui = dss.multiName.copy()
     while len(multiNameGui) < 16:
@@ -81,15 +102,27 @@ def updateControl():
     for num in range(16):
         gui.mult.multisound.insert(num, multiNameGui[num])
 
-getParams()
+def multisoundOpen():
+    dss.getMultisoundsList()
+    updateControl()
 
+
+
+getParams()
 #Startup sysex handling (handle all of the queue)
+received = False
 while True:
     sysex = midi.getSysex(dss.input)
     if sysex[0]:
+        if not received:
+            print('A: Communication established!')
+            received = True
         dss.decodeSysex(sysex[1])
     else:
         break
+
+if not received:
+    print('A: Communications failed!')
 
 
 def updateTask():
@@ -115,6 +148,8 @@ def updateTask():
             loadFile()
         elif com == 'updatecontrol':
             updateControl()
+        elif com == 'multiopen':
+            multisoundOpen()
 
         gui.execCom(0)
 

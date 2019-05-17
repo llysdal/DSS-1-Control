@@ -42,14 +42,17 @@ class Application():
 
         return slider
         
-    def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1):
-        string = tk.StringVar()
+    def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1, requestparent = False):
+        string = tk.StringVar(self.frame)
         string.set(start)
     
         dropdown = tk.OptionMenu(self.frame, string, *values)
         dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2)#, activebackground = self.blue)
         dropdown.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
         
+        if requestparent:
+            return string, dropdown
+
         return string
         
     def createButton(self, gridpos, text, function):
@@ -242,8 +245,8 @@ class DSS1main(Application):
         self.mgam2.set(values[55])
         self.mgbm2.set(values[56])
         self.d2mi.set(values[57])
-        self.osc1w.set(values[58]+1)
-        self.osc2w.set(values[59]+1)
+        self.osc1w.set(self.oscms[values[58]])
+        self.osc2w.set(self.oscms[values[59]])
         self.oscrange = values[60]
         self.osc2s.set(values[61])
         self.oscres.set(('6 bits', '7 bits', '8 bits', '10 bits', '12 bits')[values[62]])
@@ -322,8 +325,8 @@ class DSS1main(Application):
                 self.mgam2.get(),
                 self.mgbm2.get(),
                 self.d2mi.get(),
-                int(self.osc1w.get())-1,
-                int(self.osc2w.get())-1,
+                self.oscms.index(self.osc1w.get()),
+                self.oscms.index(self.osc2w.get()),
                 self.oscrange,
                 self.osc2s.get(),
                 ('6 bits', '7 bits', '8 bits', '10 bits', '12 bits').index(self.oscres.get()),
@@ -374,7 +377,7 @@ class DSS1main(Application):
         self.menu.add_cascade(label='Local', menu=localmenu)
 
         self.menu.add_separator()
-        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI() and self.execCom('updatecontrol'))
+        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI() and self.execCom('multiopen'))
 
         #Background
         backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))
@@ -417,7 +420,8 @@ class DSS1main(Application):
     #Oscillator 1
         self.createTitle((10,o), 'Oscillator 1', columnspan = 2)
         self.createText((11,o), 'Multisound')
-        self.osc1w  = self.createDropdown((11,o+1), range(1,16), start = 1)
+        self.oscms  = list(map(str, range(1,17)))
+        self.osc1w, self.osc1wo = self.createDropdown((11,o+1), self.oscms, start = self.oscms[0], requestparent = True)
         self.createText((12,o), 'Octave')
         self.osc1o  = self.createDropdown((12,o+1), [4,8,16], start = 8)
         self.createText((14,o), 'D/A Resolution')
@@ -432,7 +436,7 @@ class DSS1main(Application):
     #Oscillator 2
         self.createTitle((10,o), 'Oscillator 2', columnspan = 2)
         self.createText((11,o), 'Multisound')
-        self.osc2w = self.createDropdown((11,o+1), range(1,17), start = 1)
+        self.osc2w, self.osc2wo = self.createDropdown((11,o+1), self.oscms, start = self.oscms[0], requestparent = True)
         self.createText((12,o), 'Octave')
         self.osc2o = self.createDropdown((12,o+1), [4,8,16], start = 8)
         self.createText((13,o), 'Interval')
@@ -450,7 +454,7 @@ class DSS1main(Application):
     #Mixer
         self.createTitle((10,o), 'Mixer', columnspan = 3)
         self.createText((14,o), '1', stick = E+S)
-        self.osc1v = self.createSlider((11,o), (100,0), start = 100, orient = 1, span = (3,1))
+        self.osc1v = self.createSlider((11,o), (100,0), start = 0, orient = 1, span = (3,1))
         self.createText((14,o+1), '2', stick = E+S)
         self.osc2v = self.createSlider((11,o+1), (100,0), start = 0, orient = 1, span = (3,1))
         self.createText((14,o+2), 'Noise', stick = E+S)
@@ -466,7 +470,7 @@ class DSS1main(Application):
         self.createText((11,o), 'Mode', columnspan = 3)
         self.filterm = self.createDropdown((11,o+3), ['12dB', '24dB'], start = '24dB', columnspan = 3)
         self.createText((12,o), 'Cutoff', columnspan = 3)
-        self.filterc = self.createSlider((12,o+3), (0,127), start = 127, span=(1,3))
+        self.filterc = self.createSlider((12,o+3), (0,127), start = 0, span=(1,3))
         self.createText((13,o), 'Resonance', columnspan = 3)
         self.filterr = self.createSlider((13,o+3), (0,63), start = 0, span=(1,3))
         self.createText((14,o), 'KBD Track', columnspan = 3)
@@ -499,7 +503,7 @@ class DSS1main(Application):
     #VCA
         self.createTitle((10,o), 'VCA', columnspan = 6)
         self.createText((11,o), 'Level', columnspan = 3)
-        self.vcal = self.createSlider((11,o+3), (0,63), start = 63, span=(1,3))
+        self.vcal = self.createSlider((11,o+3), (0,63), start = 0, span=(1,3))
         self.createText((12,o), 'KBD Decay', columnspan = 3)
         self.vcad = self.createSlider((12, o+3), (-63,63), start = 0, span=(1,3))
         self.createText((13,o), 'Treble', columnspan = 3)
@@ -530,7 +534,7 @@ class DSS1main(Application):
     #Delay 1
         self.createTitle((10,o), 'Delay 1', columnspan = 2)
         self.createText((11,o), 'Time')
-        self.d1t = self.createSlider((11,o+1), (0,500), start = 200)
+        self.d1t = self.createSlider((11,o+1), (0,500), start = 0)
         self.createText((12,o), 'Feedback')
         self.d1f = self.createSlider((12,o+1), (0,15), start = 0)
         self.createText((13,o), 'Effect Level')
@@ -544,7 +548,7 @@ class DSS1main(Application):
     #Delay 2
         self.createTitle((10,o), 'Delay 2', columnspan = 2)
         self.createText((11,o), 'Time')
-        self.d2t = self.createSlider((11,o+1), (0,500), start = 200)
+        self.d2t = self.createSlider((11,o+1), (0,500), start = 0)
         self.createText((12,o), 'Feedback')
         self.d2f = self.createSlider((12,o+1), (0,15), start = 0)
         self.createText((13,o), 'Effect Level')
@@ -584,7 +588,7 @@ class DSS1main(Application):
     #DDL MG
         self.createTitle((h,o), 'MG A', columnspan = 2)
         self.createText((h+1,o), 'Frequency')
-        self.mgaf = self.createSlider((h+1,o+1), (0,63), start = 20)
+        self.mgaf = self.createSlider((h+1,o+1), (0,63), start =  0)
         self.createText((h+2,o), 'Delay 1 Mod')
         self.mgam1 = self.createSlider((h+2,o+1), (0,63), start = 0)
         self.createText((h+3,o), 'Delay 2 Mod')
@@ -593,7 +597,7 @@ class DSS1main(Application):
 
         self.createTitle((h,o), 'MG B', columnspan = 2)
         self.createText((h+1,o), 'Frequency')
-        self.mgbf = self.createSlider((h+1,o+1), (0,63), start = 20)
+        self.mgbf = self.createSlider((h+1,o+1), (0,63), start =  0)
         self.createText((h+2,o), 'Delay 1 Mod')
         self.mgbm1 = self.createSlider((h+2,o+1), (0,63), start = 0)
         self.createText((h+3,o), 'Delay 2 Mod')
@@ -647,7 +651,7 @@ class DSS1main(Application):
     #Joystick
         self.createTitle((h,o), 'Joystick', columnspan = 6)
         self.createText((h+1,o), 'Range', columnspan = 3)
-        self.joyr = self.createSlider((h+1,o+3), (0,12), start = 2, span=(1,3))
+        self.joyr = self.createSlider((h+1,o+3), (0,12), start = 0, span=(1,3))
         self.createText((h+2,o), 'Filter Control', columnspan = 3)
         self.joyf = self.createCheckbutton((h+2,o+3), text = '', columnspan = 3)
         o += 7

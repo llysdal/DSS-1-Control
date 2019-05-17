@@ -133,7 +133,7 @@ class DSS():
                 self.multiAmount = sysex[5]
                 
                 for i in range(self.multiAmount):
-                    self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])))
+                    self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
                     lenSum = 0
                     for u in range(6):
                         lenSum = sysex[6+14*i+8:6+14*i+14][5-u] * 2**u
@@ -206,20 +206,22 @@ class DSS():
         midi.sendSysex(self.output, sysexSet['playmode'])
 
     def programChange(self, program):
-        if self.debug: print('T: Changing program to '+ str(program+1))
+        if self.debug: print('T: Change program to '+ str(program+1))
         midi.sendMidi(self.output, 192, program, 0)
         self.updateGUI = True
 
     def getNameList(self):
-        if self.debug: print('T: Get program name list')
+        if self.debug: print('T: Request program name list')
         midi.sendSysex(self.output, sysexGet['programlist'])
 
     def getMultisoundsList(self):
-        if self.debug: print('T: Get multi sound list')
+        if self.debug: print('T: Request multisound list')
         midi.sendSysex(self.output, sysexGet['multisoundlist'])         
 
+    #def
+
     def getParameters(self, program):
-        if self.debug: print('T: Get all parameters from program ' + str(program+1))
+        if self.debug: print('T: Request all parameters from program ' + str(program+1))
         #Getting the sysex command
         sysex = sysexGet['parameters'].copy()
 
@@ -254,7 +256,7 @@ class DSS():
         self.setParameter(parNum, parVal)
         
     def setParameters(self, name):
-        if self.debug: print('T: Set all parameters and send the name \"' + name + '\"')
+        if self.debug: print('T: Set all parameters and assign the name \"' + name + '\"')
         while len(name) < 8:
             name += ' '
         nameList = list(map(ord, name[0:8]))
@@ -292,18 +294,16 @@ class DSS():
         midi.sendSysex(self.output, sysex)
 
 
-    #Save parameters to file
-    def saveParameters(self, name):
+    #Extract parameters from emulation
+    def extractParameters(self):
         parList = []
         for key in self.param.keys():
             parList.append(self.param[key]['v'])
 
-        fh.saveFile(name, parList)
+        return parList
 
-    #Load parameters to file
-    def loadParameters(self, name):
-        parList = fh.loadFile(name)
-
+    #Load parameters from a list
+    def putParameters(self, parList):
         for i, key in enumerate(self.param.keys()):
             self.param[key]['v'] = parList[i]
 
