@@ -3,6 +3,7 @@ GUI = __import__('control')
 midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
+b = __import__('bridge')
 from time import clock
 
 #Preinit config
@@ -31,94 +32,8 @@ gui = GUI.DSS1main(root,
                   numberfont= ('Lucida Sans', 8))
 
 
-#GUI functions
-def getParams():
-    dss.getParameters(int(gui.prog.get())-1)
+b.getParams(dss, gui)
 
-def setParams():
-    dss.setParameters(gui.progname.get())
-
-def saveProgram():
-    dss.saveProgram(int(gui.prog.get())-1)
-    dss.getNameList()
-
-def changeProgram():
-    dss.programChange(int(gui.prog.get())-1)
-
-    if gui.autoget.get():
-        getParams()
-
-def saveFile():
-    name = gui.progname.get()
-    fh.savePatch(name, dss.extractParameters())
-
-def loadFile():
-    name = gui.progname.get()
-    if fh.checkPatch(name):
-        dss.putParameters(fh.loadPatch(name))
-        dss.setParameters(name)
-        
-
-def updateControl():
-    #Program list
-    gui.progname.delete(0, 100)
-    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
-
-    #Parameters
-    parList = []
-    for i, key in enumerate(dss.param.keys()):
-        parList.append(dss.param[key]['v'])
-
-    gui.progname.delete(0, 100)
-    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
-    gui.setValues(parList)
-
-    #Multisound list - main window
-    #Fetch current multisound values
-    osc1 = min(gui.oscms.index(gui.osc1w.get()), len(gui.oscms)-1)
-    osc2 = min(gui.oscms.index(gui.osc2w.get()), len(gui.oscms)-1)
-    #Set new multisound names
-    if len(dss.multiName) > 0:
-        gui.oscms = dss.multiName
-    
-    m = gui.osc1wo.children['menu']
-    m.delete(0,16)
-    for i in range(len(gui.oscms)):
-        m.add_command(label=gui.oscms[i], command=lambda value=gui.oscms[i]: gui.osc1w.set(value))
-
-    m = gui.osc2wo.children['menu']
-    m.delete(0,16)
-    for i in range(len(gui.oscms)):
-        m.add_command(label=gui.oscms[i], command=lambda value=gui.oscms[i]: gui.osc2w.set(value))
-
-    #Set values to new option values
-    gui.osc1w.set(gui.oscms[osc1])
-    gui.osc2w.set(gui.oscms[osc2])
-
-    #Multisound list - multisound window
-    gui.mult.multisound.delete(0, 100)
-    multiNameGui = dss.multiName.copy()
-    while len(multiNameGui) < 16:
-        multiNameGui.append('EMPTY')
-    for num in range(16):
-        gui.mult.multisound.insert(num, multiNameGui[num])
-
-def multisoundOpen():
-    dss.getMultisoundsList()
-    updateControl()
-
-def getMultisound():
-    try:
-        msn = gui.mult.multisound.curselection()[0]
-        dss.getMultisound(msn)
-    except:
-        print('A: No multisound selected')
-
-def getPCM():
-    dss.getPCM(0, dss.pcmRange)
-
-
-getParams()
 #Startup sysex handling (handle all of the queue)
 received = False
 while True:
@@ -145,23 +60,23 @@ def updateTask():
     if type(com) == str:
         #print('received command')
         if com == 'getparameters':
-            getParams()
+            b.getParams(dss, gui)
         elif com == 'setparameters':
-            setParams()
+            b.setParams(dss, gui)
         elif com == 'saveprogram':
-            saveProgram()
+            b.saveProgram(dss, gui)
         elif com == 'changeprogram':
-            changeProgram()
+            b.changeProgram(dss, gui)
         elif com == 'savefile':
-            saveFile()
+            b.saveFile(dss, gui)
         elif com == 'loadfile':
-            loadFile()
+            b.loadFile(dss, gui)
         elif com == 'updatecontrol':
-            updateControl()
+            b.updateControl(dss, gui)
         elif com == 'multiopen':
-            multisoundOpen()
+            b.multisoundOpen(dss, gui)
         elif com == 'getpcm':
-            getPCM()
+            b.getPCM(dss, gui)
 
         gui.execCom(0)
 
@@ -169,7 +84,7 @@ def updateTask():
     com = gui.mult.execcommand
     if type(com) == str:
         if com == 'getmultisound':
-            getMultisound()
+            b.getMultisound(dss, gui)
 
         gui.mult.execCom(0)
 
@@ -182,7 +97,7 @@ def updateTask():
         dss.decodeSysex(sysex[1])
 
     if dss.updateGUI:
-        updateControl()
+        b.updateControl(dss, gui)
         dss.updateGUI = False
 
     #Control check

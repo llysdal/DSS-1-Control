@@ -252,6 +252,8 @@ class DSS():
 
                 self.msparam['checksum'] = sysex[-1]
 
+                self.updateGUI = True
+
             elif sysex[4] == 0x43:
                 #PCM Data Dump
                 if self.debug: print('R: PCM data dump')
@@ -272,8 +274,6 @@ class DSS():
                     pcmVal -= 2048
                     self.pcm.append(pcmVal)
                     sysex = sysex[2:]
-
-
 
             elif sysex[4] == 0x46:
                 #Program Name List

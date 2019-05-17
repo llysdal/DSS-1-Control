@@ -123,12 +123,50 @@ class DSS1multi(Application):
         self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
         self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
 
+
+        #Multisound selector
         self.createTitle((0,0), 'Multisound')
 
         self.multisound = tk.Listbox(self.frame, selectmode=BROWSE, height = 16)
         for i in range(16):
             self.multisound.insert(1000, str(i+1))
-        self.multisound.grid(row = 1, column = 0, rowspan = 10, sticky = E+W+N+S)
+        self.multisound.grid(row = 1, column = 0, rowspan = 16, sticky = W+N+S)
+
+        o = 1
+        #Multisound editing
+        self.createText((1,o), 'Name', stick = W+N)
+        self.mulname = tk.Entry(self.frame, width = 12)
+        self.mulname.grid(row = 1, column = o+1, sticky = E+N)
+        
+        self.createText((2,o), 'Length', stick = W+N)
+        self.length = self.createDynText((2,o+1))
+        self.length.set(0)
+
+        self.createText((3,o), 'Looping', stick = W+N)
+        self.loop = self.createDynText((3,o+1))
+        self.loop.set('False')
+
+        self.createText((4,o), 'Sounds', stick = W+N)
+        self.sounds = self.createDynText((4,o+1))
+        self.sounds.set(0)
+
+        self.createText((5,o), 'Max interval', stick = W+N)
+        self.maxint = self.createDynText((4,o+1))
+        self.maxint.set(0)
+
+        self.createText((6,o), 'Checksum', stick = W+N)
+        self.checksum = self.createDynText((4,o+1))
+        self.checksum.set(0)
+
+    def setValues(self, values):
+        self.mulname.delete(0,100)
+        self.mulname.insert(0, values[1])
+        self.length.set(values[2])
+        self.loop.set(['False', 'True'][values[3]])
+        self.sounds.set(values[4])
+        self.maxint.set(values[5])
+        self.checksum.set(values[6])
+
 
 class DSS1main(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
@@ -139,7 +177,6 @@ class DSS1main(Application):
 
         #Workaround
         self.oscrange = 0
-
 
     def egUpdate(self, canvas, dyntext, egpar):
 
@@ -175,12 +212,9 @@ class DSS1main(Application):
             else:
                 dyntext[i].set('{0:.2g}s'.format(time/1000))
 
-
     def openMultisoundGUI(self):
         self.multWindow.deiconify()
-        
-        
-
+ 
     def execCom(self, val):
         self.execcommand = val
 
