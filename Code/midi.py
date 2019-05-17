@@ -80,7 +80,7 @@ def getSysex(device):
         if present:
             break
 
-        t.delay(0.01)
+        t.delay(0.001)
 
     if not present:
         return False, []

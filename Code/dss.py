@@ -12,7 +12,8 @@ sysexGet = {'mode'          : [EST, korgID, formID, dssID, 0x12, EOX],
             'parameters'    : [EST, korgID, formID, dssID, 0x10, 'program', EOX],
             'programlist'   : [EST, korgID, formID, dssID, 0x17, EOX],
             'multisound'    : [EST, korgID, formID, dssID, 0x15, 'number', EOX],
-            'multisoundlist': [EST, korgID, formID, dssID, 0x16, EOX]}
+            'multisoundlist': [EST, korgID, formID, dssID, 0x16, EOX],
+            'pcmdata'       : [EST, korgID, formID, dssID, 0x14, 'start', 'end', EOX]}
 
 sysexSet = {'playmode'      : [EST, korgID, formID, dssID, 0x13, EOX],
             'parameter'     : [EST, korgID, formID, dssID, 0x41, 'parameter', 'value', EOX],
@@ -32,6 +33,15 @@ class DSS():
         self.namelist = []
         for i in range(32):
             self.namelist.append('NO-COMM')
+
+        #PCM
+        self.pcmStart = 0
+        self.pcmEnd   = 0
+        self.pcmLen   = 0
+        self.pcmRange = 261885
+        self.pcmMaxTime = 4
+        self.pcm      = []
+
         #Multisound dictionary
         self.multiAmount = 0
         self.multiName = []
@@ -149,6 +159,23 @@ class DSS():
 
         return lenSum
 
+    def lenEncode(self, length):
+        #Same as above, but reverse
+        binary = bin(length)[2:].zfill(19)
+        sysex = [0,0,0,0,0,0]
+
+        sysex[4] = int(binary[0:2], 2)
+        sysex[5] = int(binary[2], 2) * (2**6)
+        sysex[2] = int(binary[3:10], 2)
+        sysex[3] = int(binary[10], 2) * (2**6)
+        sysex[0] = int(binary[11:18], 2)
+        sysex[1] = int(binary[18], 2) * (2**6)
+
+        return sysex
+
+    def pcmEstimate(self, length):
+        return length * 0.00251 + 0.0135
+
     def decodeSysex(self, sysex):
         #Check if the sysex message is for us.
         if sysex[0:4] == [EST, korgID, formID, dssID]:
@@ -223,32 +250,30 @@ class DSS():
 
                     sysex = sysex[36:]
 
-                    '''
-                    'topkey'     :   0,
-                    'origkey'    :   0,
-                    'tune'       :   0,
-                    'level'      :   0,
-                    'cutoff'     :   0,
-                    'soundwadr'  :   0,
-                    'soundsadr'  :   0,
-                    'soundlen'   :   0,
-                    'loopsadr'   :   0,
-                    'looplen'    :   0,
-                    'transpose'  :   0,
-                    'samplingfreq':  0}
-                    '''
-
                 self.msparam['checksum'] = sysex[-1]
-
-                print(self.msparam)
-                print(self.soundparameters)
-
-                
 
             elif sysex[4] == 0x43:
                 #PCM Data Dump
                 if self.debug: print('R: PCM data dump')
-                pass
+
+                sysex = sysex[5:-1]
+
+                self.pcmStart = self.lenDecode(sysex[0:6])
+                sysex = sysex[6:]
+                self.pcmEnd = self.lenDecode(sysex[0:6])
+                sysex = sysex[6:]
+
+                self.pcmLen = self.pcmEnd - self.pcmStart
+
+                self.pcm = []
+                for p in range(self.pcmLen):
+                    pcmVal =  sysex[0]>>2
+                    pcmVal += sysex[1]*32
+                    pcmVal -= 2048
+                    self.pcm.append(pcmVal)
+                    sysex = sysex[2:]
+
+
 
             elif sysex[4] == 0x46:
                 #Program Name List
@@ -312,6 +337,28 @@ class DSS():
     def getNameList(self):
         if self.debug: print('T: Request program name list')
         midi.sendSysex(self.output, sysexGet['programlist'])
+
+    def getPCM(self, start, end):
+        if self.debug: print('T: Request PCM from address ' + str(start) + ' to ' + str(end))
+        
+        if start < 0 or start > self.pcmRange or end < start or end > self.pcmRange:
+            print('A: PCM request out of bounds, cancelling')
+            return
+
+        est = self.pcmEstimate(end-start)
+        print('A: PCM estimated time is {0:.1f}s'.format(est))
+        if est > self.pcmMaxTime:
+            print('A: PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
+            return
+
+        sysex = sysexGet['pcmdata'].copy()
+        startIndex = sysex.index('start')
+        sysex[startIndex:startIndex+1] = self.lenEncode(start)
+
+        endIndex = sysex.index('end')
+        sysex[endIndex:endIndex+1] = self.lenEncode(end)
+
+        midi.sendSysex(self.output, sysex)    
 
     def getMultisoundsList(self):
         if self.debug: print('T: Request multisound list')

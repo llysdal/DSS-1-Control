@@ -3,6 +3,7 @@ GUI = __import__('control')
 midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
+from time import clock
 
 #Preinit config
 configPresent, config = fh.getConfig()
@@ -113,6 +114,8 @@ def getMultisound():
     except:
         print('A: No multisound selected')
 
+def getPCM():
+    dss.getPCM(0, dss.pcmRange)
 
 
 getParams()
@@ -157,6 +160,8 @@ def updateTask():
             updateControl()
         elif com == 'multiopen':
             multisoundOpen()
+        elif com == 'getpcm':
+            getPCM()
 
         gui.execCom(0)
 

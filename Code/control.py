@@ -377,6 +377,10 @@ class DSS1main(Application):
         self.menu.add_separator()
         self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI() and self.execCom('multiopen'))
 
+        self.menu.add_separator()
+        self.menu.add_command(label='Get Soundmemory', command = lambda: self.execCom('getpcm'))
+
+
         #Background
         backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))
         backlabel = tk.Label(self.frame, image=backimage, bd = 0)
