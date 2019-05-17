@@ -106,6 +106,13 @@ def multisoundOpen():
     dss.getMultisoundsList()
     updateControl()
 
+def getMultisound():
+    try:
+        msn = gui.mult.multisound.curselection()[0]
+        dss.getMultisound(msn)
+    except:
+        print('A: No multisound selected')
+
 
 
 getParams()
@@ -130,7 +137,7 @@ def updateTask():
     gui.egUpdate(gui.egfc, (gui.egfat, gui.egfdt, gui.egfslt, gui.egfrt), (gui.egfa, gui.egfd, gui.egfb, gui.egfsl, gui.egfs, gui.egfr))
     gui.egUpdate(gui.egvc, (gui.egvat, gui.egvdt, gui.egvslt, gui.egvrt), (gui.egva, gui.egvd, gui.egvb, gui.egvsl, gui.egvs, gui.egvr))
 
-    #GUI functions
+    #GUI functions - Main
     com = gui.execcommand
     if type(com) == str:
         #print('received command')
@@ -152,6 +159,14 @@ def updateTask():
             multisoundOpen()
 
         gui.execCom(0)
+
+    #GUI functions - Multisound
+    com = gui.mult.execcommand
+    if type(com) == str:
+        if com == 'getmultisound':
+            getMultisound()
+
+        gui.mult.execCom(0)
 
    
 

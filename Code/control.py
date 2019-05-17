@@ -104,6 +104,7 @@ class Application():
     def minSizeV(self, pos, width):
         self.frame.rowconfigure(pos, minsize = width)
        
+
 class DSS1multi(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
         self.init(master, titlefont, textfont, numberfont)
@@ -128,9 +129,6 @@ class DSS1multi(Application):
         for i in range(16):
             self.multisound.insert(1000, str(i+1))
         self.multisound.grid(row = 1, column = 0, rowspan = 10, sticky = E+W+N+S)
-
-
-
 
 class DSS1main(Application):
     def __init__(self, master, titlefont, textfont, numberfont):

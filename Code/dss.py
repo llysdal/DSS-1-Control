@@ -1,22 +1,23 @@
 from time import clock
 midi = __import__('midi')
-fh = __import__('filehandler')
 t = __import__('tools')
 
-exclst = 0b11110000
+EST    = 0b11110000
 korgID = 0b01000010
 formID = 0b00110000 #Controls the receive channel, configured as 1 here.
-dss1ID = 0b00001011
+dssID  = 0b00001011
+EOX    = 0b11110111
 
-sysexGet = {'mode'          : [0xF0, 0x42, 0x30, 0x0B, 0x12, 0xF7],
-            'parameters'    : [0xF0, 0x42, 0x30, 0x0B, 0x10, 'program', 0xF7],
-            'programlist'   : [0xF0, 0x42, 0x30, 0x0B, 0x17, 0xF7],
-            'multisoundlist': [0xF0, 0x42, 0x30, 0x0B, 0x16, 0xF7]}
+sysexGet = {'mode'          : [EST, korgID, formID, dssID, 0x12, EOX],
+            'parameters'    : [EST, korgID, formID, dssID, 0x10, 'program', EOX],
+            'programlist'   : [EST, korgID, formID, dssID, 0x17, EOX],
+            'multisound'    : [EST, korgID, formID, dssID, 0x15, 'number', EOX],
+            'multisoundlist': [EST, korgID, formID, dssID, 0x16, EOX]}
 
-sysexSet = {'playmode'      : [0xF0, 0x42, 0x30, 0x0B, 0x13, 0xF7],
-            'parameter'     : [0xF0, 0x42, 0x30, 0x0B, 0x41, 'parameter', 'value', 0xF7],
-            'parameters'    : [0xF0, 0x42, 0x30, 0x0B, 0x40, 'parameters', 'name', 0xF7],
-            'writeprogram'  : [0xF0, 0x42, 0x30, 0x0B, 0x11, 'program', 0xF7]}
+sysexSet = {'playmode'      : [EST, korgID, formID, dssID, 0x13, EOX],
+            'parameter'     : [EST, korgID, formID, dssID, 0x41, 'parameter', 'value', EOX],
+            'parameters'    : [EST, korgID, formID, dssID, 0x40, 'parameters', 'name', EOX],
+            'writeprogram'  : [EST, korgID, formID, dssID, 0x11, 'program', EOX]}
 
 class DSS():
     def __init__(self, inputID, outputID):
@@ -35,6 +36,28 @@ class DSS():
         self.multiAmount = 0
         self.multiName = []
         self.multiLen = []
+
+        #Multisound parameters
+        self.msparam = {'number'        :   0,
+                        'name'          :   '',
+                        'length'        :   0,
+                        'loop'          :   0,
+                        'sounds'        :   0,
+                        'maxinterval'   :   0,
+                        'checksum'      :   0}
+        self.soundparam = {'topkey'     :   0,
+                           'origkey'    :   0,
+                           'tune'       :   0,
+                           'level'      :   0,
+                           'cutoff'     :   0,
+                           'soundwadr'  :   0,
+                           'soundsadr'  :   0,
+                           'soundlen'   :   0,
+                           'loopsadr'   :   0,
+                           'looplen'    :   0,
+                           'transpose'  :   0,
+                           'samplingfreq':  0}
+        self.soundparameters = []
         #Initial DSS1 parameters
         self.param = {'osc1vol'         :   {'l': 0, 'h': 127, 'v': 100},   #osc 1 mix ratio
                       'osc2vol'         :   {'l': 0, 'h': 127, 'v':   0},   #osc 2 mix ratio
@@ -115,9 +138,20 @@ class DSS():
                       'assign'          :   {'l': 0, 'h':   2, 'v':   1},   #poly2, poly1, unison
                       'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   3}}   #amount of unison voices
 
+    def lenDecode(self, sysex):
+        #Retarded data coming from DSS1 (Service manual page 6 [4](1))
+        lenSum =  min(sysex[1], 1)
+        lenSum += sysex[0] * (2**1)
+        lenSum += min(sysex[3], 1) * (2**8)
+        lenSum += sysex[2] * (2**9)
+        lenSum += min(sysex[5], 1) * (2**16)
+        lenSum += sysex[4] * (2**17)
+
+        return lenSum
+
     def decodeSysex(self, sysex):
         #Check if the sysex message is for us.
-        if sysex[0:4] == [exclst, korgID, formID, dss1ID]:
+        if sysex[0:4] == [EST, korgID, formID, dssID]:
             if sysex[4] == 0x42:
                 #Mode Data
                 if self.debug: print('R: Mode data')
@@ -134,17 +168,82 @@ class DSS():
                 
                 for i in range(self.multiAmount):
                     self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
-                    lenSum = 0
-                    for u in range(6):
-                        lenSum = sysex[6+14*i+8:6+14*i+14][5-u] * 2**u
-                    self.multiLen.append(lenSum)
+                    self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
                 
                 self.updateGUI = True
 
             elif sysex[4] == 0x44:
                 #Multi Sound Parameter Dump
                 if self.debug: print('R: Multi sound parameters')
-                pass
+
+                sysex = sysex[5:-1]
+
+                self.msparam['number'] = sysex[0]
+                sysex = sysex[1:]
+
+                self.msparam['name']   = ''.join(map(chr, sysex[0:8]))
+                sysex = sysex[8:]
+
+                self.msparam['length'] = self.lenDecode(sysex[0:6])
+                sysex = sysex[6:]
+
+                if sysex[0]>63: 
+                    self.msparam['loop'] = 1
+                    self.msparam['sounds'] = sysex[0]-64
+                else:            
+                    self.msparam['loop'] = 0
+                    self.msparam['sounds'] = sysex[0]
+                sysex = sysex[1:]
+
+                self.msparam['maxinterval'] = sysex[0]
+                sysex = sysex[1:]
+
+                #Sound handling
+                self.soundparameters = []
+                for s in range(self.msparam['sounds']):
+                    self.soundparameters.append(self.soundparam.copy())
+
+                    self.soundparameters[s]['topkey']   = sysex[0]
+                    self.soundparameters[s]['origkey']  = sysex[1]
+                    self.soundparameters[s]['tune']     = sysex[2]
+                    self.soundparameters[s]['level']    = sysex[3]
+                    self.soundparameters[s]['cutoff']   = sysex[4]
+                    self.soundparameters[s]['soundwadr']= self.lenDecode(sysex[5:11])
+                    self.soundparameters[s]['soundsadr']= self.lenDecode(sysex[11:17])
+                    self.soundparameters[s]['soundlen'] = self.lenDecode(sysex[17:23])
+                    self.soundparameters[s]['loopsadr'] = self.lenDecode(sysex[23:29])
+                    self.soundparameters[s]['looplen']  = self.lenDecode(sysex[29:35])
+
+                    if sysex[35]>63:
+                        self.soundparameters[s]['transpose'] = 0
+                        self.soundparameters[s]['samplingfreq'] = sysex[35]-64
+                    else:            
+                        self.soundparameters[s]['transpose'] = 1
+                        self.soundparameters[s]['samplingfreq'] = sysex[35]
+
+                    sysex = sysex[36:]
+
+                    '''
+                    'topkey'     :   0,
+                    'origkey'    :   0,
+                    'tune'       :   0,
+                    'level'      :   0,
+                    'cutoff'     :   0,
+                    'soundwadr'  :   0,
+                    'soundsadr'  :   0,
+                    'soundlen'   :   0,
+                    'loopsadr'   :   0,
+                    'looplen'    :   0,
+                    'transpose'  :   0,
+                    'samplingfreq':  0}
+                    '''
+
+                self.msparam['checksum'] = sysex[-1]
+
+                print(self.msparam)
+                print(self.soundparameters)
+
+                
 
             elif sysex[4] == 0x43:
                 #PCM Data Dump
@@ -218,7 +317,18 @@ class DSS():
         if self.debug: print('T: Request multisound list')
         midi.sendSysex(self.output, sysexGet['multisoundlist'])         
 
-    #def
+    def getMultisound(self, number):
+        if self.debug: 
+            print('T: Request multisound parameters from ', end = '')
+            try:
+                print(self.multiName[number])
+            except:
+                print('EMPTY')
+
+        sysex = sysexGet['multisound'].copy()
+        sysex[sysex.index('number')] = number
+
+        midi.sendSysex(self.output, sysex)
 
     def getParameters(self, program):
         if self.debug: print('T: Request all parameters from program ' + str(program+1))
