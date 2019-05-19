@@ -3,6 +3,17 @@ import tkinter as tk
 from tkinter import N,S,E,W, HORIZONTAL, VERTICAL, BROWSE
 from math import exp
 
+midiKeys = []
+for o in range(-1, 10):
+    for k in range(0,12):
+        midiKeys.append(('C','C#','D','D#','E','F','F#','G','G#','A','A#','B')[k] + str(o))
+midiKeys = midiKeys[0:128]
+
+
+class spinbox(tk.Spinbox):
+    def set(self, value):
+        self.delete(0,100)
+        self.insert(0,value)
 
 class Application():
     def init(self, master, titlefont, textfont, numberfont):
@@ -83,14 +94,23 @@ class Application():
 
         return stringvar
 
-    def createCheckbutton(self, gridpos, text, columnspan = 1):
+    def createCheckbutton(self, gridpos, text, columnspan = 1, sticky = E+S):
         intvar = tk.IntVar()
 
         button = tk.Checkbutton(self.frame, text = text, variable = intvar, onvalue = 1, offvalue = 0)
         button.configure(background = self.black)#, activebackground = self.blue)
-        button.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+S)
+        button.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = sticky)
 
         return intvar
+
+    def createSpinbox(self, gridpos, from_ = 0, to = 10, values = [], width = 2, sticky = E+N):
+        if len(values) > 0:
+            spin = spinbox(self.frame, values = values, width = width)
+        else:
+            spin = spinbox(self.frame, from_=from_, to=to, width = width)
+        spin.grid(column = gridpos[0], row = gridpos[1], sticky = sticky)
+
+        return spin
 
     def createMenu(self):
         menubar = tk.Menu(self.frame)
@@ -121,7 +141,7 @@ class DSS1multi(Application):
 
         self.menu = self.createMenu()
         self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
-        self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
+        self.menu.add_command(label='*/Set Multisound/*', command = lambda: self.execCom('setmultisound'))
 
 
         #Multisound selector
@@ -130,9 +150,9 @@ class DSS1multi(Application):
         self.multisound = tk.Listbox(self.frame, selectmode=BROWSE, height = 16)
         for i in range(16):
             self.multisound.insert(1000, str(i+1))
-        self.multisound.grid(row = 1, column = 0, rowspan = 16, sticky = W+N+S)
+        self.multisound.grid(row = 1, column = 0, rowspan = 16, sticky = W+N)
 
-        o = 1
+        o = 2
         #Multisound editing
         self.createText((o, 1), 'Name', sticky = W+N)
         self.mulname = tk.Entry(self.frame, width = 12)
@@ -140,32 +160,102 @@ class DSS1multi(Application):
         
         self.createText((o, 2), 'Length', sticky = W+N)
         self.length = self.createDynText((o+1, 2))
-        self.length.set(0)
 
         self.createText((o, 3), 'Looping', sticky = W+N)
-        self.loop = self.createDynText((o+1, 3))
-        self.loop.set('False')
+        self.loop = self.createCheckbutton((o+1, 3), text = '', sticky = E+N)
 
         self.createText((o, 4), 'Sounds', sticky = W+N)
-        self.sounds = self.createDynText((o+1, 4))
-        self.sounds.set(0)
+        self.sounds = spinbox(self.frame, from_=1, to=16, width = 2, command = lambda: self.execCom('reloadsounds'))
+        self.sounds.grid(row = 4, column = o+1, sticky = E+N)
 
         self.createText((o, 5), 'Max interval', sticky = W+N)
         self.maxint = self.createDynText((o+1, 5))
-        self.maxint.set(0)
 
-        self.createText((o, 6), 'Checksum', sticky = W+N)
-        self.checksum = self.createDynText((o+1, 6))
-        self.checksum.set(0)
+        #self.createText((o, 6), 'Checksum', sticky = W+N)
+        #self.checksum = self.createDynText((o+1, 6))
+
+        o+=2
+
+        self.soundframe = []
+        for s in range(16):
+            self.soundframe.append(Application())
+
+            f = self.soundframe[s]
+
+            f.init(self.frame, self.titlefont, self.textfont, self.numberfont)
+
+            if s < 6:
+                f.frame.grid(column = o+s, row = 1, rowspan = 18)
+            elif s >= 12:
+                f.frame.grid(column = o+s-12, row = 21)
+            else:
+                f.frame.grid(column = o+s-6, row = 20)
+
+            f.createTitle((0, 0), str(s+1), columnspan = 2)
+
+            f.createText((0, 1), 'Top Key')
+            f.topkey = f.createSpinbox((1, 1), values = midiKeys, width = 4)
+
+            f.createText((0, 2), 'Orig. Key')
+            f.origkey = f.createSpinbox((1, 2), values = midiKeys, width = 4)
+
+            f.createText((0, 3), 'Tune')
+            f.tune = f.createSlider((1, 3), (-63, 63), start = 0)
+
+            f.createText((0, 4), 'Level')
+            f.level = f.createSlider((1, 4), (1, 64), start = 64)
+
+            f.createText((0, 5), 'Cutoff')
+            f.cutoff = f.createSlider((1, 5), (1, 64), start = 64)
+
+            f.createText((0, 6), 'Transpose')
+            f.transpose = f.createCheckbutton((1, 6), '')
+
+            f.createText((0, 7), 'Samp. Freq.')
+            f.freq = f.createDropdown((1, 7), ['32kHz', '24kHz', '16kHz', '48kHz'], start = '32kHz')
+
+            f.createText((0, 8), 'Word Adr.')
+            f.soundwadr = f.createDynText((1, 8))
+            f.createText((0, 9), 'Start Adr.')
+            f.soundsadr = f.createDynText((1, 9))
+            f.createText((0, 10), 'Length')
+            f.soundlen = f.createDynText((1, 10))
+
+            f.createText((0, 11), 'Loop S. Adr.')
+            f.loopsadr = f.createDynText((1, 11))
+            f.createText((0, 12), 'Loop Length')
+            f.looplen = f.createDynText((1, 12))
+
+            f.frame.grid_remove()
+
+
 
     def setValues(self, values):
         self.mulname.delete(0,100)
         self.mulname.insert(0, values[1])
         self.length.set(values[2])
-        self.loop.set(['False', 'True'][values[3]])
+        self.loop.set(values[3])
         self.sounds.set(values[4])
         self.maxint.set(values[5])
         self.checksum.set(values[6])
+
+        for s in range(16):
+            self.soundframe[s].frame.grid_remove()
+
+        for s in range(values[4]):
+            self.soundframe[s].topkey.set(midiKeys[values[7][s][0]])
+            self.soundframe[s].origkey.set(midiKeys[values[7][s][1]])
+            self.soundframe[s].tune.set(values[7][s][2]-63)
+            self.soundframe[s].level.set(values[7][s][3])
+            self.soundframe[s].cutoff.set(values[7][s][4])
+            self.soundframe[s].soundwadr.set(values[7][s][5])
+            self.soundframe[s].soundsadr.set(values[7][s][6])
+            self.soundframe[s].soundlen.set(values[7][s][7])
+            self.soundframe[s].loopsadr.set(values[7][s][8])
+            self.soundframe[s].looplen.set(values[7][s][9])
+            self.soundframe[s].transpose.set(values[7][s][10])
+            self.soundframe[s].freq.set(['32kHz', '24kHz', '16kHz', '48kHz'][values[7][s][11]])
+            self.soundframe[s].frame.grid()
 
 
 class DSS1main(Application):

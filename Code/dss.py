@@ -1,6 +1,6 @@
 midi = __import__('midi')
 t = __import__('tools')
-#grapher = __import__('grapher')
+grapher = __import__('grapher')
 
 channel = 0
 
@@ -54,7 +54,7 @@ class DSS():
                         'name'          :   '',
                         'length'        :   0,
                         'loop'          :   0,
-                        'sounds'        :   0,
+                        'sounds'        :   1,
                         'maxinterval'   :   0,
                         'checksum'      :   0}
         self.soundparam = {'topkey'     :   0,
@@ -70,6 +70,8 @@ class DSS():
                            'transpose'  :   0,
                            'samplingfreq':  0}
         self.soundparameters = []
+        for i in range(16):
+            self.soundparameters.append(self.soundparam.copy())
         #Initial DSS1 parameters
         self.param = {'osc1vol'         :   {'l': 0, 'h': 127, 'v': 100},   #osc 1 mix ratio
                       'osc2vol'         :   {'l': 0, 'h': 127, 'v':   0},   #osc 2 mix ratio
@@ -229,10 +231,7 @@ class DSS():
                 sysex = sysex[1:]
 
                 #Sound handling
-                self.soundparameters = []
                 for s in range(self.msparam['sounds']):
-                    self.soundparameters.append(self.soundparam.copy())
-
                     self.soundparameters[s]['topkey']   = sysex[0]
                     self.soundparameters[s]['origkey']  = sysex[1]
                     self.soundparameters[s]['tune']     = sysex[2]
@@ -278,7 +277,7 @@ class DSS():
                     self.pcm.append(pcmVal)
                     sysex = sysex[2:]
 
-                #grapher.showGraph(self.pcm, self.pcmStart)
+                grapher.showGraph(self.pcm, self.pcmStart)
 
             #Program Name List
             elif sysex[4] == 0x46:
@@ -476,6 +475,15 @@ class DSS():
 
     def extractMultisoundParameters(self):
         multParList = []
-        for i, key in enumerate(self.msparam.keys()):
+        for key in self.msparam.keys():
             multParList.append(self.msparam[key])
+
+        soundParList = []    
+        for i in range(16):
+            soundParList.append([])
+            for key in self.soundparam.keys():
+                soundParList[i].append(self.soundparameters[i][key])
+
+        multParList.append(soundParList)
+
         return multParList
