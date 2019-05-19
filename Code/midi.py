@@ -98,33 +98,4 @@ def getSysex(device):
         if 0xF7 in data[0][0]:
             return True, sysex[0:sysex.index(0xF7)+1]
 
-        t.delay(0.005)
-
-
-
-def getSysexLegacy(device):
-    sysex = []
-    
-    data = receiveAllMidi(device)
-    
-    if data == []:
-        return False, []
-    
-    sysexPresent = False
-    for i in range(len(data)):
-        if data[i][0][0] == 0xF0:
-            sysexPresent = True
-            sysexId = i
-            
-    if sysexPresent == False:
-        return False, []
-        
-    for i in range(sysexId, len(data)):
-        for u in range(len(data[i][0])):
-            sysex.append(data[i][0][u])
-            
-            if data[i][0][u] == 0xF7:
-                return True, sysex
-    
-    return False, []
-    
+        t.delay(0.002)

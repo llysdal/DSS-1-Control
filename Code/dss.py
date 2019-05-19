@@ -1,10 +1,12 @@
-from time import clock
 midi = __import__('midi')
 t = __import__('tools')
+#grapher = __import__('grapher')
+
+channel = 0
 
 EST    = 0b11110000
 korgID = 0b01000010
-formID = 0b00110000 #Controls the receive channel, configured as 1 here.
+formID = 0b00110000 + channel
 dssID  = 0b00001011
 EOX    = 0b11110111
 
@@ -39,7 +41,7 @@ class DSS():
         self.pcmEnd   = 0
         self.pcmLen   = 0
         self.pcmRange = 261885
-        self.pcmMaxTime = 4
+        self.pcmMaxTime = 11
         self.pcm      = []
 
         #Multisound dictionary
@@ -174,18 +176,19 @@ class DSS():
         return sysex
 
     def pcmEstimate(self, length):
-        return length * 0.00251 + 0.0135
+        #Sysex delay times half the pcm length
+        return 0.002 * (length/2)
 
     def decodeSysex(self, sysex):
         #Check if the sysex message is for us.
         if sysex[0:4] == [EST, korgID, formID, dssID]:
+            #Mode Data
             if sysex[4] == 0x42:
-                #Mode Data
                 if self.debug: print('R: Mode data')
                 self.mode = sysex[5]
 
+            #Multi Sound List
             elif sysex[4] == 0x45:
-                #Multi Sound List
                 if self.debug: print('R: Multi sound name list')
                 self.multiLen = []
                 self.multiName = []
@@ -198,9 +201,9 @@ class DSS():
                     self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
                 
                 self.updateGUI = True
-
+            
+            #Multi Sound Parameter Dump
             elif sysex[4] == 0x44:
-                #Multi Sound Parameter Dump
                 if self.debug: print('R: Multi sound parameters')
 
                 sysex = sysex[5:-1]
@@ -254,8 +257,8 @@ class DSS():
 
                 self.updateGUI = True
 
+            #PCM Data Dump
             elif sysex[4] == 0x43:
-                #PCM Data Dump
                 if self.debug: print('R: PCM data dump')
 
                 sysex = sysex[5:-1]
@@ -275,16 +278,18 @@ class DSS():
                     self.pcm.append(pcmVal)
                     sysex = sysex[2:]
 
+                #grapher.showGraph(self.pcm, self.pcmStart)
+
+            #Program Name List
             elif sysex[4] == 0x46:
-                #Program Name List
                 if self.debug: print('R: Program name list')
                 for i in range(32):
                     self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
                     
                 self.updateGUI = True
 
+            #Program Parameter Dump
             elif sysex[4] == 0x40:
-                #Program Parameter Dump
                 if self.debug: print('R: Program parameters')
 
                 sysex = sysex[5:-1]
@@ -301,41 +306,46 @@ class DSS():
                 
                 self.updateGUI = True
 
+            #Data Load Completed
             elif sysex[4] == 0x23:
-                #Data Load Completed
                 if self.debug: print('R: Data load complete')
                 pass
 
+            #Data Load Error
             elif sysex[4] == 0x24:
-                #Data Load Error
                 if self.debug: print('R: Data load error')
                 pass
 
+            #Write Completed
             elif sysex[4] == 0x21:
-                #Write Completed
                 if self.debug: print('R: Write complete')
                 pass
 
+            #Write Error
             elif sysex[4] == 0x22:
-                #Write Error
                 if self.debug: print('R: Write error')
                 pass
 
 
     def getMode(self):
+        if self.debug: print('T: Get mode')
+
         midi.sendSysex(self.output, sysexGet['mode'])
 
     def setPlayMode(self):
         if self.debug: print('T: Set mode to playmode')
+
         midi.sendSysex(self.output, sysexSet['playmode'])
 
     def programChange(self, program):
         if self.debug: print('T: Change program to '+ str(program+1))
+
         midi.sendMidi(self.output, 192, program, 0)
         self.updateGUI = True
 
     def getNameList(self):
         if self.debug: print('T: Request program name list')
+
         midi.sendSysex(self.output, sysexGet['programlist'])
 
     def getPCM(self, start, end):
@@ -362,6 +372,7 @@ class DSS():
 
     def getMultisoundsList(self):
         if self.debug: print('T: Request multisound list')
+
         midi.sendSysex(self.output, sysexGet['multisoundlist'])         
 
     def getMultisound(self, number):
@@ -379,21 +390,16 @@ class DSS():
 
     def getParameters(self, program):
         if self.debug: print('T: Request all parameters from program ' + str(program+1))
-        #Getting the sysex command
-        sysex = sysexGet['parameters'].copy()
 
-        #Replacing the pointer with the program
+        sysex = sysexGet['parameters'].copy()
         sysex[sysex.index('program')] = program
 
-        #Sending the sysex request to the DSS-1
         midi.sendSysex(self.output, sysex)
 
     def setParameter(self, parameter, value):
         if self.debug: print('T: Set parameter ' + str(parameter) + ' to ' + str(value))
-        #Get sysex command
-        sysex = sysexSet['parameter'].copy()
 
-        #Replacing pointers
+        sysex = sysexSet['parameter'].copy()
         sysex[sysex.index('parameter')] = parameter
 
         valueIndex = sysex.index('value')
@@ -414,6 +420,7 @@ class DSS():
         
     def setParameters(self, name):
         if self.debug: print('T: Set all parameters and assign the name \"' + name + '\"')
+
         while len(name) < 8:
             name += ' '
         nameList = list(map(ord, name[0:8]))
@@ -442,9 +449,9 @@ class DSS():
 
     def saveProgram(self, program):
         if self.debug: print('T: Save program as program ' + str(program+1))
+
         #Getting the sysex command
         sysex = sysexSet['writeprogram'].copy()
-
         #Replacing the pointer with the program
         sysex[sysex.index('program')] = program
 
@@ -465,3 +472,10 @@ class DSS():
             self.param[key]['v'] = parList[i]
 
         self.updateGUI = True
+
+
+    def extractMultisoundParameters(self):
+        multParList = []
+        for i, key in enumerate(self.msparam.keys()):
+            multParList.append(self.msparam[key])
+        return multParList

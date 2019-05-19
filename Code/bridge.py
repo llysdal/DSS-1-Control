@@ -3,6 +3,7 @@ GUI = __import__('control')
 midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
+grapher = __import__('grapher')
 
 
 #GUI functions
@@ -39,12 +40,7 @@ def updateControl(dss, gui):
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
 
     #Parameters
-    parList = []
-    for i, key in enumerate(dss.param.keys()):
-        parList.append(dss.param[key]['v'])
-
-    gui.progname.delete(0, 100)
-    gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
+    parList = dss.extractParameters()
     gui.setValues(parList)
 
     #Multisound list - main window
@@ -78,9 +74,7 @@ def updateControl(dss, gui):
         gui.mult.multisound.insert(num, multiNameGui[num])
 
     #Multisound values
-    multParList = []
-    for i, key in enumerate(dss.msparam.keys()):
-        multParList.append(dss.msparam[key])
+    multParList = dss.extractMultisoundParameters()
     gui.mult.setValues(multParList)
     
 
@@ -96,4 +90,4 @@ def getMultisound(dss, gui):
         print('A: No multisound selected')
 
 def getPCM(dss, gui):
-    dss.getPCM(0, dss.pcmRange)
+    dss.getPCM(0, 1020)

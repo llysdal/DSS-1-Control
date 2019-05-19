@@ -28,15 +28,15 @@ class Application():
 
     def createCanvas(self, gridpos, columnspan = 1, rowspan = 1, size = (100,100)):
         canvas = tk.Canvas(self.frame, width = size[0], height = size[1], bg = 'black')
-        canvas.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, rowspan = rowspan, sticky = N+S+E+W)
+        canvas.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, rowspan = rowspan, sticky = N+S+E+W)
 
         return canvas
     
-    def createSlider(self, gridpos, val, res = 1, start = 0, length = 100, width = 15, orient = 0, span = (1,1), showvalue = True, stick = E+S):
+    def createSlider(self, gridpos, val, res = 1, start = 0, length = 100, width = 15, orient = 0, columnspan = 1, rowspan = 1, showvalue = True, sticky = E+S):
         slider = tk.Scale(self.frame, from_ = val[0], to = val[1], resolution = res,\
                        orient = (HORIZONTAL, VERTICAL)[orient], length = length, showvalue = showvalue, width = width)
         slider.configure(background = self.black, foreground = self.white, highlightthickness = 0, troughcolor = self.grey, activebackground = self.white, font = self.numberfont)
-        slider.grid(row = gridpos[0], column = gridpos[1], rowspan = span[0], columnspan = span[1], sticky = stick)
+        slider.grid(column = gridpos[0], row = gridpos[1], rowspan = rowspan, columnspan = columnspan, sticky = sticky)
         
         slider.set(start)
 
@@ -48,7 +48,7 @@ class Application():
     
         dropdown = tk.OptionMenu(self.frame, string, *values)
         dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2)#, activebackground = self.blue)
-        dropdown.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
+        dropdown.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+S)
         
         if requestparent:
             return string, dropdown
@@ -58,19 +58,19 @@ class Application():
     def createButton(self, gridpos, text, function):
         button = tk.Button(self.frame, text = text, command = function)
         button.configure(background = self.black, foreground = self.white)
-        button.grid(row = gridpos[0], column = gridpos[1], stick = N+S+E+W)
+        button.grid(column = gridpos[0], row = gridpos[1], stick = N+S+E+W)
     
-    def createText(self, gridpos, text, columnspan = 1, stick = W+S):
+    def createText(self, gridpos, text, columnspan = 1, sticky = W+S):
         label = tk.Label(self.frame, text = text, font = self.textfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
-        label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = stick)
+        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = sticky)
         
         return label
 
     def createTitle(self, gridpos, text, columnspan = 1):
         label = tk.Label(self.frame, text = text, font = self.titlefont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
-        label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+W)
+        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+W)
         
         return label
 
@@ -79,7 +79,7 @@ class Application():
         
         label = tk.Label(self.frame, textvariable = stringvar, font = self.numberfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
-        label.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+N)
+        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+N)
 
         return stringvar
 
@@ -88,7 +88,7 @@ class Application():
 
         button = tk.Checkbutton(self.frame, text = text, variable = intvar, onvalue = 1, offvalue = 0)
         button.configure(background = self.black)#, activebackground = self.blue)
-        button.grid(row = gridpos[0], column = gridpos[1], columnspan = columnspan, sticky = E+S)
+        button.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+S)
 
         return intvar
 
@@ -98,11 +98,11 @@ class Application():
 
         return menubar
 
-    def minSizeH(self, pos, width):
-        self.frame.columnconfigure(pos, minsize = width)
+    def minSizeX(self, x, width):
+        self.frame.columnconfigure((x,0), minsize = width)
         
-    def minSizeV(self, pos, width):
-        self.frame.rowconfigure(pos, minsize = width)
+    def minSizeY(self, y, width):
+        self.frame.rowconfigure((0,y), minsize = width)
        
 
 class DSS1multi(Application):
@@ -134,28 +134,28 @@ class DSS1multi(Application):
 
         o = 1
         #Multisound editing
-        self.createText((1,o), 'Name', stick = W+N)
+        self.createText((o, 1), 'Name', sticky = W+N)
         self.mulname = tk.Entry(self.frame, width = 12)
         self.mulname.grid(row = 1, column = o+1, sticky = E+N)
         
-        self.createText((2,o), 'Length', stick = W+N)
-        self.length = self.createDynText((2,o+1))
+        self.createText((o, 2), 'Length', sticky = W+N)
+        self.length = self.createDynText((o+1, 2))
         self.length.set(0)
 
-        self.createText((3,o), 'Looping', stick = W+N)
-        self.loop = self.createDynText((3,o+1))
+        self.createText((o, 3), 'Looping', sticky = W+N)
+        self.loop = self.createDynText((o+1, 3))
         self.loop.set('False')
 
-        self.createText((4,o), 'Sounds', stick = W+N)
-        self.sounds = self.createDynText((4,o+1))
+        self.createText((o, 4), 'Sounds', sticky = W+N)
+        self.sounds = self.createDynText((o+1, 4))
         self.sounds.set(0)
 
-        self.createText((5,o), 'Max interval', stick = W+N)
-        self.maxint = self.createDynText((4,o+1))
+        self.createText((o, 5), 'Max interval', sticky = W+N)
+        self.maxint = self.createDynText((o+1, 5))
         self.maxint.set(0)
 
-        self.createText((6,o), 'Checksum', stick = W+N)
-        self.checksum = self.createDynText((4,o+1))
+        self.createText((o, 6), 'Checksum', sticky = W+N)
+        self.checksum = self.createDynText((o+1, 6))
         self.checksum.set(0)
 
     def setValues(self, values):
@@ -178,39 +178,45 @@ class DSS1main(Application):
         #Workaround
         self.oscrange = 0
 
-    def egUpdate(self, canvas, dyntext, egpar):
+    def egUpdate(self):
 
-        #Canvas
-        w,h = canvas.winfo_width(), canvas.winfo_height()
-        h2 = h-10
-        canvas.delete('all')
-        attack = (w/4 * egpar[0].get()/63, h-h2)
-        decay = (w/4 * egpar[1].get()/63+attack[0], h-h2*egpar[2].get()/63)
-        slope = (w/4 * egpar[3].get()/63+decay[0], h-h2*egpar[4].get()/63)
-        sustain = (w-w/4 * egpar[5].get()/63, h-h2*egpar[4].get()/63)
-        release = (w, h)
+        for param in ((self.egfc, (self.egfat, self.egfdt, self.egfslt, self.egfrt), (self.egfa, self.egfd, self.egfb, self.egfsl, self.egfs, self.egfr)),
+                      (self.egvc, (self.egvat, self.egvdt, self.egvslt, self.egvrt), (self.egva, self.egvd, self.egvb, self.egvsl, self.egvs, self.egvr))):
+            canvas = param[0]
+            dyntext = param[1]
+            egpar = param[2]
+        
+            #Canvas
+            w,h = canvas.winfo_width(), canvas.winfo_height()
+            h2 = h-10
+            canvas.delete('all')
+            attack = (w/4 * egpar[0].get()/63, h-h2)
+            decay = (w/4 * egpar[1].get()/63+attack[0], h-h2*egpar[2].get()/63)
+            slope = (w/4 * egpar[3].get()/63+decay[0], h-h2*egpar[4].get()/63)
+            sustain = (w-w/4 * egpar[5].get()/63, h-h2*egpar[4].get()/63)
+            release = (w, h)
 
-        canvas.create_line((0, h, attack[0], attack[1]), fill = '#2b7cff')
-        canvas.create_line((attack[0], attack[1], decay[0], decay[1]), fill = '#2b7cff')
-        canvas.create_line((decay[0], decay[1], slope[0], slope[1]), fill = '#2b7cff')
-        canvas.create_line((slope[0], slope[1], sustain[0], sustain[1]), fill = '#2b7cff')
-        canvas.create_line((sustain[0], sustain[1], release[0], release[1]), fill = '#2b7cff')
+            canvas.create_line((0, h, attack[0], attack[1]), fill = '#2b7cff')
+            canvas.create_line((attack[0], attack[1], decay[0], decay[1]), fill = '#2b7cff')
+            canvas.create_line((decay[0], decay[1], slope[0], slope[1]), fill = '#2b7cff')
+            canvas.create_line((slope[0], slope[1], sustain[0], sustain[1]), fill = '#2b7cff')
+            canvas.create_line((sustain[0], sustain[1], release[0], release[1]), fill = '#2b7cff')
 
-        #Text
-        attackTime  = 5*exp(0.15*egpar[0].get())
-        decayTime   = 5*exp(0.135*egpar[1].get())
-        slopeTime   = 5*exp(0.15*egpar[3].get())
-        releaseTime = 5*exp(0.135*egpar[5].get())
+            #Text
+            attackTime  = 5*exp(0.15*egpar[0].get())
+            decayTime   = 5*exp(0.135*egpar[1].get())
+            slopeTime   = 5*exp(0.15*egpar[3].get())
+            releaseTime = 5*exp(0.135*egpar[5].get())
 
-        #print('decay = ' + str(egpar[1].get()) + '  -  ' + str(decayTime))
+            #print('decay = ' + str(egpar[1].get()) + '  -  ' + str(decayTime))
 
-        for i, time in enumerate((attackTime, decayTime, slopeTime, releaseTime)):
-            if time < 9.9:
-                dyntext[i].set('{0:.1g}ms'.format(min(time,9)))
-            elif time < 99:
-                dyntext[i].set('{0:.2g}ms'.format(min(time,99)))
-            else:
-                dyntext[i].set('{0:.2g}s'.format(time/1000))
+            for i, time in enumerate((attackTime, decayTime, slopeTime, releaseTime)):
+                if time < 9.9:
+                    dyntext[i].set('{0:.1g}ms'.format(min(time,9)))
+                elif time < 99:
+                    dyntext[i].set('{0:.2g}ms'.format(min(time,99)))
+                else:
+                    dyntext[i].set('{0:.2g}s'.format(time/1000))
 
     def openMultisoundGUI(self):
         self.multWindow.deiconify()
@@ -422,13 +428,13 @@ class DSS1main(Application):
         backlabel.image = backimage
 
 
-        self.minSizeV((9,0),5)
-        self.minSizeH((0,0), 5)
-        self.minSizeH((0,33), 5)
-        self.minSizeV((28,0), 5)
+        self.minSizeY( 0, 5)
+        self.minSizeX( 0, 5)
+        self.minSizeX(33, 5)
+        self.minSizeY(28, 5)
 
     #Program management
-        self.createText((0,1), 'Program', stick = W+S)
+        self.createText((1, 0), 'Program', sticky = W+S)
         self.prog = tk.Spinbox(self.frame, from_=1, to=32, width = 2, command = lambda: self.execCom('changeprogram'))
         self.prog.grid(row = 0, column = 2, sticky = E+S)
 
@@ -437,266 +443,266 @@ class DSS1main(Application):
 
         o = 1
     #Autobend
-        self.createTitle((10,o), 'Autobend', columnspan = 2)
-        self.createText((11,o), 'Mode')
-        self.autom = self.createDropdown((11,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
-        self.createText((12,o), 'Polarity')
-        self.autop = self.createDropdown((12,o+1), ['Down', 'Up'], start = 'Up')
-        self.createText((13,o), 'Intensity')
-        self.autoi = self.createSlider((13,o+1), (0,127), start = 0)
-        self.createText((14,o), 'Time')
-        self.autot = self.createSlider((14,o+1), (0,31), start = 0)
-        self.minSizeH((0,o+1), 80)
+        self.createTitle((o, 10), 'Autobend', columnspan = 2)
+        self.createText((o, 11), 'Mode')
+        self.autom = self.createDropdown((o+1, 11), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
+        self.createText((o, 12), 'Polarity')
+        self.autop = self.createDropdown((o+1, 12), ['Down', 'Up'], start = 'Up')
+        self.createText((o, 13), 'Intensity')
+        self.autoi = self.createSlider((o+1, 13), (0,127))
+        self.createText((o, 14), 'Time')
+        self.autot = self.createSlider((o+1, 14), (0,31))
+        self.minSizeX(o+1, 80)
         o += 2
 
         #Gap
-        self.minSizeH((0,o), 30)
+        self.minSizeX(o, 30)
         o += 1
 
     #Oscillator 1
-        self.createTitle((10,o), 'Oscillator 1', columnspan = 2)
-        self.createText((11,o), 'Multisound')
+        self.createTitle((o, 10), 'Oscillator 1', columnspan = 2)
+        self.createText((o, 11), 'Multisound')
         self.oscms  = list(map(str, range(1,17)))
-        self.osc1w, self.osc1wo = self.createDropdown((11,o+1), self.oscms, start = self.oscms[0], requestparent = True)
-        self.createText((12,o), 'Octave')
-        self.osc1o  = self.createDropdown((12,o+1), [4,8,16], start = 8)
-        self.createText((14,o), 'D/A Resolution')
-        self.oscres = self.createDropdown((14,o+1), ['6 bits', '7 bits', '8 bits', '10 bits', '12 bits'], start = '12 bits')
-        self.minSizeH((0,o+1), 80)
+        self.osc1w, self.osc1wo = self.createDropdown((o+1, 11), self.oscms, start = self.oscms[0], requestparent = True)
+        self.createText((o, 12), 'Octave')
+        self.osc1o  = self.createDropdown((o+1, 12), [4,8,16], start = 8)
+        self.createText((o, 14), 'D/A Resolution')
+        self.oscres = self.createDropdown((o+1, 14), ['6 bits', '7 bits', '8 bits', '10 bits', '12 bits'], start = '12 bits')
+        self.minSizeX(o+1, 80)
         o += 2
 
         #Gap
-        self.minSizeH((0,o), 20)
+        self.minSizeX(o, 20)
         o += 1
 
     #Oscillator 2
-        self.createTitle((10,o), 'Oscillator 2', columnspan = 2)
-        self.createText((11,o), 'Multisound')
-        self.osc2w, self.osc2wo = self.createDropdown((11,o+1), self.oscms, start = self.oscms[0], requestparent = True)
-        self.createText((12,o), 'Octave')
-        self.osc2o = self.createDropdown((12,o+1), [4,8,16], start = 8)
-        self.createText((13,o), 'Interval')
-        self.osc2i = self.createSlider((13,o+1), (0,11), start = 0)
-        self.createText((14,o), 'Detune')
-        self.osc2d = self.createSlider((14,o+1), (0,63), start = 0)
-        self.createText((15,o), 'Sync')
-        self.osc2s = self.createCheckbutton((15,o+1), text = '')
+        self.createTitle((o, 10), 'Oscillator 2', columnspan = 2)
+        self.createText((o, 11), 'Multisound')
+        self.osc2w, self.osc2wo = self.createDropdown((o+1, 11), self.oscms, start = self.oscms[0], requestparent = True)
+        self.createText((o, 12), 'Octave')
+        self.osc2o = self.createDropdown((o+1, 12), [4,8,16], start = 8)
+        self.createText((o, 13), 'Interval')
+        self.osc2i = self.createSlider((o+1, 13), (0,11))
+        self.createText((o, 14), 'Detune')
+        self.osc2d = self.createSlider((o+1, 14), (0,63))
+        self.createText((o, 15), 'Sync')
+        self.osc2s = self.createCheckbutton((o+1, 15), text = '')
         o += 2
 
         #Gap
-        self.minSizeH((0,o), 30)
+        self.minSizeX(o, 30)
         o += 1
 
     #Mixer
-        self.createTitle((10,o), 'Mixer', columnspan = 3)
-        self.createText((14,o), '1', stick = E+S)
-        self.osc1v = self.createSlider((11,o), (100,0), start = 0, orient = 1, span = (3,1))
-        self.createText((14,o+1), '2', stick = E+S)
-        self.osc2v = self.createSlider((11,o+1), (100,0), start = 0, orient = 1, span = (3,1))
-        self.createText((14,o+2), 'Noise', stick = E+S)
-        self.noise = self.createSlider((11,o+2), (63,0), start = 0, orient = 1, span = (3,1))
+        self.createTitle((o, 10), 'Mixer', columnspan = 3)
+        self.createText((o, 14), '1', sticky = E+S)
+        self.osc1v = self.createSlider((o, 11), (100,0), orient = 1, rowspan = 3)
+        self.createText((o+1, 14), '2', sticky = E+S)
+        self.osc2v = self.createSlider((o+1, 11), (100,0), orient = 1, rowspan = 3)
+        self.createText((o+2, 14), 'Noise', sticky = E+S)
+        self.noise = self.createSlider((o+2, 11), (63,0), orient = 1, rowspan = 3)
         o += 3
 
         #Gap
-        self.minSizeH((0,o), 30)
+        self.minSizeX(o, 30)
         o += 1
 
     #Filter
-        self.createTitle((10,o), 'Filter', columnspan = 6)
-        self.createText((11,o), 'Mode', columnspan = 3)
-        self.filterm = self.createDropdown((11,o+3), ['12dB', '24dB'], start = '24dB', columnspan = 3)
-        self.createText((12,o), 'Cutoff', columnspan = 3)
-        self.filterc = self.createSlider((12,o+3), (0,127), start = 0, span=(1,3))
-        self.createText((13,o), 'Resonance', columnspan = 3)
-        self.filterr = self.createSlider((13,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((14,o), 'KBD Track', columnspan = 3)
-        self.filterk = self.createSlider((14,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((15, o), 'Filter EG', columnspan = 3)
-        self.filtereg = self.createSlider((15,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((16, o), 'EG Invert', columnspan = 3)
-        self.filterinv = self.createCheckbutton((16,o+3), text = '', columnspan = 3)
+        self.createTitle((o, 10), 'Filter', columnspan = 6)
+        self.createText((o, 11), 'Mode', columnspan = 3)
+        self.filterm  = self.createDropdown((o+3, 11), ['12dB', '24dB'], start = '24dB', columnspan = 3)
+        self.createText((o, 12), 'Cutoff', columnspan = 3)
+        self.filterc  = self.createSlider((o+3, 12), (0,127), columnspan = 3)
+        self.createText((o, 13), 'Resonance', columnspan = 3)
+        self.filterr  = self.createSlider((o+3, 13), (0, 63), columnspan = 3)
+        self.createText((o, 14), 'KBD Track', columnspan = 3)
+        self.filterk  = self.createSlider((o+3, 14), (0, 63), columnspan = 3)
+        self.createText((o, 15), 'Filter EG', columnspan = 3)
+        self.filtereg = self.createSlider((o+3, 15), (0, 63), columnspan = 3)
+        self.createText((o, 16), 'EG Invert', columnspan = 3)
+        self.filterinv= self.createCheckbutton((o+3, 16), text = '', columnspan = 3)
 
     #Filter EG
-        self.egfc = self.createCanvas((17,o), columnspan = 6, rowspan = 2, size=(225,100))
-        self.egfa = self.createSlider((19,o),   (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfd = self.createSlider((19,o+1), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfb = self.createSlider((19,o+2), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfsl= self.createSlider((19,o+3), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfs = self.createSlider((19,o+4), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfr = self.createSlider((19,o+5), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egfat = self.createDynText((21,o))
-        self.egfdt = self.createDynText((21,o+1))
+        self.egfc = self.createCanvas((o, 17), columnspan = 6, rowspan = 2, size=(225,100))
+        self.egfa = self.createSlider((o, 19),   (63,0), orient = 1, rowspan = 2)
+        self.egfd = self.createSlider((o+1, 19), (63,0), orient = 1, rowspan = 2)
+        self.egfb = self.createSlider((o+2, 19), (63,0), orient = 1, rowspan = 2)
+        self.egfsl= self.createSlider((o+3, 19), (63,0), orient = 1, rowspan = 2)
+        self.egfs = self.createSlider((o+4, 19), (63,0), orient = 1, rowspan = 2)
+        self.egfr = self.createSlider((o+5, 19), (63,0), orient = 1, rowspan = 2)
+        self.egfat = self.createDynText((o, 21))
+        self.egfdt = self.createDynText((o+1, 21))
         #self.egfbt = self.createDynText((21,o+2))
-        self.egfslt= self.createDynText((21,o+3))
+        self.egfslt= self.createDynText((o+3, 21))
         #self.egfst = self.createDynText((21,o+4))
-        self.egfrt = self.createDynText((21,o+5))
+        self.egfrt = self.createDynText((o+5, 21))
         o += 6
 
         #Gap
-        self.minSizeH((0,o), 30)
+        self.minSizeX(o, 30)
         o += 1
 
     #VCA
-        self.createTitle((10,o), 'VCA', columnspan = 6)
-        self.createText((11,o), 'Level', columnspan = 3)
-        self.vcal = self.createSlider((11,o+3), (0,63), start = 0, span=(1,3))
-        self.createText((12,o), 'KBD Decay', columnspan = 3)
-        self.vcad = self.createSlider((12, o+3), (-63,63), start = 0, span=(1,3))
-        self.createText((13,o), 'Treble', columnspan = 3)
-        self.treb = self.createSlider((13, o+3), (-4,8), start = 0, span=(1,3))
-        self.createText((14,o), 'Bass', columnspan = 3)
-        self.bass = self.createSlider((14, o+3), (-4,8), start = 0, span=(1,3))
+        self.createTitle((o, 10), 'VCA', columnspan = 6)
+        self.createText((o, 11), 'Level', columnspan = 3)
+        self.vcal = self.createSlider((o+3, 11), (0,63), columnspan = 3)
+        self.createText((o, 12), 'KBD Decay', columnspan = 3)
+        self.vcad = self.createSlider((o+3, 12), (-63,63), columnspan = 3)
+        self.createText((o, 13), 'Treble', columnspan = 3)
+        self.treb = self.createSlider((o+3, 13), (-4,8), columnspan = 3)
+        self.createText((o, 14), 'Bass', columnspan = 3)
+        self.bass = self.createSlider((o+3, 14), (-4,8), columnspan = 3)
   
     #VCA EG
-        self.egvc = self.createCanvas((17,o), columnspan = 6, rowspan = 2, size=(225,100))
-        self.egva = self.createSlider((19,o),   (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvd = self.createSlider((19,o+1), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvb = self.createSlider((19,o+2), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvsl= self.createSlider((19,o+3), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvs = self.createSlider((19,o+4), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvr = self.createSlider((19,o+5), (63,0), start = 0, orient = 1, span=(2,1))
-        self.egvat = self.createDynText((21,o))
-        self.egvdt = self.createDynText((21,o+1))
+        self.egvc = self.createCanvas((o, 17), columnspan = 6, rowspan = 2, size=(225,100))
+        self.egva = self.createSlider((o, 19),   (63,0), orient = 1, rowspan = 2)
+        self.egvd = self.createSlider((o+1, 19), (63,0), orient = 1, rowspan = 2)
+        self.egvb = self.createSlider((o+2, 19), (63,0), orient = 1, rowspan = 2)
+        self.egvsl= self.createSlider((o+3, 19), (63,0), orient = 1, rowspan = 2)
+        self.egvs = self.createSlider((o+4, 19), (63,0), orient = 1, rowspan = 2)
+        self.egvr = self.createSlider((o+5, 19), (63,0), orient = 1, rowspan = 2)
+        self.egvat = self.createDynText((o, 21))
+        self.egvdt = self.createDynText((o+1, 21))
         #self.egvbt = self.createDynText((21,o+2))
-        self.egvslt= self.createDynText((21,o+3))
+        self.egvslt= self.createDynText((o+3, 21))
         #self.egvst = self.createDynText((21,o+4))
-        self.egvrt = self.createDynText((21,o+5))
+        self.egvrt = self.createDynText((o+5, 21))
         o += 6
 
         #Gap
-        self.minSizeH((0,o), 30)
+        self.minSizeX(o, 30)
         o += 1
 
     #Delay 1
-        self.createTitle((10,o), 'Delay 1', columnspan = 2)
-        self.createText((11,o), 'Time')
-        self.d1t = self.createSlider((11,o+1), (0,500), start = 0)
-        self.createText((12,o), 'Feedback')
-        self.d1f = self.createSlider((12,o+1), (0,15), start = 0)
-        self.createText((13,o), 'Effect Level')
-        self.d1e = self.createSlider((13,o+1), (0,15), start = 0)
+        self.createTitle((o, 10), 'Delay 1', columnspan = 2)
+        self.createText((o, 11), 'Time')
+        self.d1t = self.createSlider((o+1, 11), (0,500))
+        self.createText((o, 12), 'Feedback')
+        self.d1f = self.createSlider((o+1, 12), (0,15))
+        self.createText((o, 13), 'Effect Level')
+        self.d1e = self.createSlider((o+1, 13), (0,15))
         o += 2
 
         #Gap
-        self.minSizeH((0,o), 20)
+        self.minSizeX(o, 20)
         o += 1
 
     #Delay 2
-        self.createTitle((10,o), 'Delay 2', columnspan = 2)
-        self.createText((11,o), 'Time')
-        self.d2t = self.createSlider((11,o+1), (0,500), start = 0)
-        self.createText((12,o), 'Feedback')
-        self.d2f = self.createSlider((12,o+1), (0,15), start = 0)
-        self.createText((13,o), 'Effect Level')
-        self.d2e = self.createSlider((13,o+1), (0,15), start = 0)
-        self.createText((14,o), 'Source')
-        self.d2s = self.createDropdown((14,o+1), ['Direct', 'Delay 1'], start = 'Direct')
-        self.createText((15,o), 'Mod Invert')
-        self.d2mi = self.createCheckbutton((15,o+1), text = '')
+        self.createTitle((o, 10), 'Delay 2', columnspan = 2)
+        self.createText((o, 11), 'Time')
+        self.d2t = self.createSlider((o+1, 11), (0,500))
+        self.createText((o, 12), 'Feedback')
+        self.d2f = self.createSlider((o+1, 12), (0,15))
+        self.createText((o, 13), 'Effect Level')
+        self.d2e = self.createSlider((o+1, 13), (0,15))
+        self.createText((o, 14), 'Source')
+        self.d2s = self.createDropdown((o+1, 14), ['Direct', 'Delay 1'], start = 'Direct')
+        self.createText((o, 15), 'Mod Invert')
+        self.d2mi = self.createCheckbutton((o+1, 15), text = '')
 
     #MOD Section
         o = 4
         h = 16
 
     #MG
-        self.createTitle((h,o), 'Osc MG', columnspan = 2)
-        self.createText((h+1,o), 'Frequency')
-        self.omgf = self.createSlider((h+1,o+1), (0,31), start = 0)
-        self.createText((h+2,o), 'Intensity')
-        self.omgi = self.createSlider((h+2,o+1), (0,15), start = 0)
-        self.createText((h+3,o), 'Delay')
-        self.omgd = self.createSlider((h+3,o+1), (0,15), start = 0)
-        self.createText((h+4,o), 'Mode')
-        self.omgm = self.createDropdown((h+4,o+1), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
+        self.createTitle((o, h), 'Osc MG', columnspan = 2)
+        self.createText((o, h+1), 'Frequency')
+        self.omgf = self.createSlider((o+1, h+1), (0,31))
+        self.createText((o, h+2), 'Intensity')
+        self.omgi = self.createSlider((o+1, h+2), (0,15))
+        self.createText((o, h+3), 'Delay')
+        self.omgd = self.createSlider((o+1, h+3), (0,15))
+        self.createText((o, h+4), 'Mode')
+        self.omgm = self.createDropdown((o+1, h+4), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
        
         o += 3
 
-        self.createTitle((h,o), 'Filter MG', columnspan = 2)
-        self.createText((h+1,o), 'Frequency')
-        self.fmgf = self.createSlider((h+1,o+1), (0,63), start = 0)
-        self.createText((h+2,o), 'Intensity')
-        self.fmgi = self.createSlider((h+2,o+1), (0,63), start = 0)
-        self.createText((h+3,o), 'Delay')
-        self.fmgd = self.createSlider((h+3,o+1), (0,63), start = 0)
+        self.createTitle((o, h), 'Filter MG', columnspan = 2)
+        self.createText((o, h+1), 'Frequency')
+        self.fmgf = self.createSlider((o+1, h+1), (0,63))
+        self.createText((o, h+2), 'Intensity')
+        self.fmgi = self.createSlider((o+1, h+2), (0,63))
+        self.createText((o, h+3), 'Delay')
+        self.fmgd = self.createSlider((o+1, h+3), (0,63))
 
         o += 21
 
     #DDL MG
-        self.createTitle((h,o), 'MG A', columnspan = 2)
-        self.createText((h+1,o), 'Frequency')
-        self.mgaf = self.createSlider((h+1,o+1), (0,63), start =  0)
-        self.createText((h+2,o), 'Delay 1 Mod')
-        self.mgam1 = self.createSlider((h+2,o+1), (0,63), start = 0)
-        self.createText((h+3,o), 'Delay 2 Mod')
-        self.mgam2 = self.createSlider((h+3,o+1), (0,63), start = 0)
+        self.createTitle((o, h), 'MG A', columnspan = 2)
+        self.createText((o, h+1), 'Frequency')
+        self.mgaf  = self.createSlider((o+1, h+1), (0,63))
+        self.createText((o, h+2), 'Delay 1 Mod')
+        self.mgam1 = self.createSlider((o+1, h+2), (0,63))
+        self.createText((o, h+3), 'Delay 2 Mod')
+        self.mgam2 = self.createSlider((o+1, h+3), (0,63))
         o += 3
 
-        self.createTitle((h,o), 'MG B', columnspan = 2)
-        self.createText((h+1,o), 'Frequency')
-        self.mgbf = self.createSlider((h+1,o+1), (0,63), start =  0)
-        self.createText((h+2,o), 'Delay 1 Mod')
-        self.mgbm1 = self.createSlider((h+2,o+1), (0,63), start = 0)
-        self.createText((h+3,o), 'Delay 2 Mod')
-        self.mgbm2 = self.createSlider((h+3,o+1), (0,63), start = 0)
+        self.createTitle((o, h), 'MG B', columnspan = 2)
+        self.createText((o, h+1), 'Frequency')
+        self.mgbf  = self.createSlider((o+1, h+1), (0,63))
+        self.createText((o, h+2), 'Delay 1 Mod')
+        self.mgbm1 = self.createSlider((o+1, h+2), (0,63))
+        self.createText((o, h+3), 'Delay 2 Mod')
+        self.mgbm2 = self.createSlider((o+1, h+3), (0,63))
 
     #Velocity Sensitive
         o = 1
         h = 22
 
-        self.minSizeV((h-1,0), 50)
+        self.minSizeY(h-1, 50)
 
-        self.createTitle((h,o), 'Velocity Sensitive', columnspan = 8)
+        self.createTitle((o, h), 'Velocity Sensitive', columnspan = 8)
 
-        self.createText((h+1,o), 'Autobend Int ')
-        self.vela = self.createSlider((h+1,o+1), (0,63), start = 0)
-        self.createText((h+2,o), 'X-mod')
-        self.oscx = self.createSlider((h+2,o+1), (0,31), start = 0)
+        self.createText((o, h+1), 'Autobend Int ')
+        self.vela = self.createSlider((o+1, h+1), (0,63))
+        self.createText((o, h+2), 'X-mod')
+        self.oscx = self.createSlider((o+1, h+2), (0,31))
 
-        self.createText((h+1, o+3), 'Filter Cutoff')
-        self.velfc = self.createSlider((h+1,o+4), (0,63), start = 0)
-        self.createText((h+2, o+3), 'Filter EG Attack')
-        self.velfa = self.createSlider((h+2,o+4), (0,63), start = 0)
-        self.createText((h+3, o+3), 'Filter EG Decay')
-        self.velfd = self.createSlider((h+3,o+4), (0,63), start = 0)
-        self.createText((h+4, o+3), 'Filter EG Slope')
-        self.velfs = self.createSlider((h+4,o+4), (0,63), start = 0)
+        self.createText((o+3, h+1), 'Filter Cutoff')
+        self.velfc = self.createSlider((o+4, h+1), (0,63))
+        self.createText((o+3, h+2), 'Filter EG Attack')
+        self.velfa = self.createSlider((o+4, h+2), (0,63))
+        self.createText((o+3, h+3), 'Filter EG Decay')
+        self.velfd = self.createSlider((o+4, h+3), (0,63))
+        self.createText((o+3, h+4), 'Filter EG Slope')
+        self.velfs = self.createSlider((o+4, h+4), (0,63))
 
-        self.createText((h+1, o+6), 'VCA Level')
-        self.velvl = self.createSlider((h+1,o+7), (0,63), start = 0)
-        self.createText((h+2, o+6), 'VCA EG Attack')
-        self.velva = self.createSlider((h+2,o+7), (0,63), start = 0)
-        self.createText((h+3, o+6), 'VCA EG Decay')
-        self.velvd = self.createSlider((h+3,o+7), (0,63), start = 0)
-        self.createText((h+4, o+6), 'VCA EG Slope')
-        self.velvs = self.createSlider((h+4,o+7), (0,63), start = 0)
+        self.createText((o+6, h+1), 'VCA Level')
+        self.velvl = self.createSlider((o+7, h+1), (0,63))
+        self.createText((o+6, h+2), 'VCA EG Attack')
+        self.velva = self.createSlider((o+7, h+2), (0,63))
+        self.createText((o+6, h+3), 'VCA EG Decay')
+        self.velvd = self.createSlider((o+7, h+3), (0,63))
+        self.createText((o+6, h+4), 'VCA EG Slope')
+        self.velvs = self.createSlider((o+7, h+4), (0,63))
         o += 7
         o += 6
 
     #Aftertouch 
-        self.createTitle((h,o), 'Aftertouch', columnspan = 6)
-        self.createText((h+1,o), 'Osc MG Int', columnspan = 3)
-        self.aftmgi = self.createSlider((h+1,o+3), (0,15), start = 0, span = (1,3))
-        self.createText((h+2,o), 'Filter', columnspan = 3)
-        self.aftf = self.createSlider((h+2,o+3), (0,15), start = 0, span = (1,3))
-        self.createText((h+3,o), 'Filter Mod', columnspan = 3)
-        self.aftfm = self.createDropdown((h+3,o+3), ['MG Int', 'Cutoff'], start = 'MG Int', columnspan = 3)
-        self.createText((h+4,o), 'VCA Level', columnspan = 3)
-        self.aftvl = self.createSlider((h+4,o+3), (0,15), start = 0, span = (1,3))
+        self.createTitle((o, h), 'Aftertouch', columnspan = 6)
+        self.createText((o, h+1), 'Osc MG Int', columnspan = 3)
+        self.aftmgi= self.createSlider((o+3, h+1), (0,15), columnspan = 3)
+        self.createText((o, h+2), 'Filter', columnspan = 3)
+        self.aftf  = self.createSlider((o+3, h+2), (0,15), columnspan = 3)
+        self.createText((o, h+3), 'Filter Mod', columnspan = 3)
+        self.aftfm = self.createDropdown((o+3, h+3), ['MG Int', 'Cutoff'], start = 'MG Int', columnspan = 3)
+        self.createText((o, h+4), 'VCA Level', columnspan = 3)
+        self.aftvl = self.createSlider((o+3, h+4), (0,15), columnspan = 3)
         o += 7
 
     #Joystick
-        self.createTitle((h,o), 'Joystick', columnspan = 6)
-        self.createText((h+1,o), 'Range', columnspan = 3)
-        self.joyr = self.createSlider((h+1,o+3), (0,12), start = 0, span=(1,3))
-        self.createText((h+2,o), 'Filter Control', columnspan = 3)
-        self.joyf = self.createCheckbutton((h+2,o+3), text = '', columnspan = 3)
+        self.createTitle((o, h), 'Joystick', columnspan = 6)
+        self.createText((o, h+1), 'Range', columnspan = 3)
+        self.joyr = self.createSlider((o+3, h+1), (0,12), columnspan = 3)
+        self.createText((o, h+2), 'Filter Control', columnspan = 3)
+        self.joyf = self.createCheckbutton((o+3, h+2), text = '', columnspan = 3)
         o += 7
 
     #Voice
-        self.createTitle((h,o), 'Voice', columnspan = 2)
-        self.createText((h+1,o), 'Assign Mode')
-        self.assign = self.createDropdown((h+1,o+1), ['Poly 1', 'Poly 2', 'Unison'], start = 'Poly 1')
-        self.createText((h+2,o), 'Uni Voices')
-        self.unia = self.createDropdown((h+2,o+1), [1,2,4,8], start = 4)
-        self.createText((h+3,o), 'Uni Detune')
-        self.unid = self.createSlider((h+3,o+1), [0,7], start = 4)
+        self.createTitle((o, h), 'Voice', columnspan = 2)
+        self.createText((o, h+1), 'Assign Mode')
+        self.assign = self.createDropdown((o+1, h+1), ['Poly 1', 'Poly 2', 'Unison'], start = 'Poly 1')
+        self.createText((o, h+2), 'Uni Voices')
+        self.unia = self.createDropdown((o+1, h+2), [1,2,4,8], start = 4)
+        self.createText((o, h+3), 'Uni Detune')
+        self.unid = self.createSlider((o+1, h+3), [0,7], start = 4)
