@@ -1,7 +1,9 @@
-import matplotlib.pyplot as plt
-import matplotlib as mpl
+#import matplotlib.pyplot as plt
+#import matplotlib as mpl
 
 def showGraph(data, start):
+    pass
+'''
     xtick = []
     for i in range(start, start+len(data), int(len(data)/16)):
         xtick.append(i)
@@ -17,6 +19,7 @@ def showGraph(data, start):
 
     plt.ion()
     plt.show()
+    '''
 
 
 def saveGraph(name, data):

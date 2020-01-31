@@ -7,7 +7,7 @@ midi.init()
 def getMidiDevices():
     midiInputs = {}
     midiOutputs = {}
-    
+
     for deviceNum in range(midi.get_count()):
         n, name, input, output, n = midi.get_device_info(deviceNum)
 
@@ -16,12 +16,11 @@ def getMidiDevices():
             midiInputs[str(name)[2:-1]] = deviceNum
         if output:
             midiOutputs[str(name)[2:-1]] = deviceNum
-    
+
     return midiInputs, midiOutputs
 
 def getDeviceInfo(id):
     info = midi.get_device_info(id)
-
     if type(info) == type(None):
         info = 0,0,0,0,0
 
@@ -29,10 +28,10 @@ def getDeviceInfo(id):
 
 def getMidiInputDevice(id):
     return midi.Input(id)
-    
+
 def getMidiOutputDevice(id):
     return midi.Output(id)
-    
+
 def clearMidi(device):
     device.read(1000)
 
@@ -52,9 +51,9 @@ def receiveMidi(device):
 def sendMidi(device, status, data1, data2):
     device.write_short(status, data1, data2)
 
-def sendSysex(device, message):  
+def sendSysex(device, message):
     device.write_sys_ex(0, bytes(message))
-    
+
 def checkSysex(device):
     data = receiveMidi(device)
 

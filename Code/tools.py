@@ -21,8 +21,8 @@ def chooseDevices(devices, config):
                 break
         else:
             print('Default input device \'' + configInput + '\' not found')
-    
-    #Obtain manually    
+
+    #Obtain manually
     while not valid:
         for acc in range(len(devices[0])):
             print(str(list(devices[0].values())[acc]) + ' - ' + list(devices[0].keys())[acc])
@@ -68,4 +68,4 @@ def chooseDevices(devices, config):
             break
         print('Invalid ID')
 
-    return i, o 
+    return i, o

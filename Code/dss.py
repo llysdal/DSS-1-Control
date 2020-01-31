@@ -26,7 +26,7 @@ class DSS():
     def __init__(self, inputID, outputID):
         self.input  = midi.getMidiInputDevice(inputID)
         self.output = midi.getMidiOutputDevice(outputID)
-        
+
         self.updateGUI = False
         self.debug = True
         #Assume he's in playmode
@@ -197,13 +197,13 @@ class DSS():
 
                 #Assigning data
                 self.multiAmount = sysex[5]
-                
+
                 for i in range(self.multiAmount):
                     self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
                     self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
-                
+
                 self.updateGUI = True
-            
+
             #Multi Sound Parameter Dump
             elif sysex[4] == 0x44:
                 if self.debug: print('R: Multi sound parameters')
@@ -219,10 +219,10 @@ class DSS():
                 self.msparam['length'] = self.lenDecode(sysex[0:6])
                 sysex = sysex[6:]
 
-                if sysex[0]>63: 
+                if sysex[0]>63:
                     self.msparam['loop'] = 1
                     self.msparam['sounds'] = sysex[0]-64
-                else:            
+                else:
                     self.msparam['loop'] = 0
                     self.msparam['sounds'] = sysex[0]
                 sysex = sysex[1:]
@@ -246,7 +246,7 @@ class DSS():
                     if sysex[35]>63:
                         self.soundparameters[s]['transpose'] = 0
                         self.soundparameters[s]['samplingfreq'] = sysex[35]-64
-                    else:            
+                    else:
                         self.soundparameters[s]['transpose'] = 1
                         self.soundparameters[s]['samplingfreq'] = sysex[35]
 
@@ -277,14 +277,14 @@ class DSS():
                     self.pcm.append(pcmVal)
                     sysex = sysex[2:]
 
-                grapher.showGraph(self.pcm, self.pcmStart)
+                #grapher.showGraph(self.pcm, self.pcmStart)
 
             #Program Name List
             elif sysex[4] == 0x46:
                 if self.debug: print('R: Program name list')
                 for i in range(32):
                     self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
-                    
+
                 self.updateGUI = True
 
             #Program Parameter Dump
@@ -302,7 +302,7 @@ class DSS():
                         self.param[key]['v'] = sysex[0] + sysex[1]*128
                         sysex.pop(0)
                         sysex.pop(0)
-                
+
                 self.updateGUI = True
 
             #Data Load Completed
@@ -349,7 +349,7 @@ class DSS():
 
     def getPCM(self, start, end):
         if self.debug: print('T: Request PCM from address ' + str(start) + ' to ' + str(end))
-        
+
         if start < 0 or start > self.pcmRange or end < start or end > self.pcmRange:
             print('A: PCM request out of bounds, cancelling')
             return
@@ -367,15 +367,15 @@ class DSS():
         endIndex = sysex.index('end')
         sysex[endIndex:endIndex+1] = self.lenEncode(end)
 
-        midi.sendSysex(self.output, sysex)    
+        midi.sendSysex(self.output, sysex)
 
     def getMultisoundsList(self):
         if self.debug: print('T: Request multisound list')
 
-        midi.sendSysex(self.output, sysexGet['multisoundlist'])         
+        midi.sendSysex(self.output, sysexGet['multisoundlist'])
 
     def getMultisound(self, number):
-        if self.debug: 
+        if self.debug:
             print('T: Request multisound parameters from ', end = '')
             try:
                 print(self.multiName[number])
@@ -408,7 +408,7 @@ class DSS():
             sysex.insert(valueIndex, value%128)
         else:
             sysex[valueIndex] = value
-    
+
         midi.sendSysex(self.output, sysex)
 
     def setKey(self, key):
@@ -416,7 +416,7 @@ class DSS():
         parVal = self.param[key]['v']
 
         self.setParameter(parNum, parVal)
-        
+
     def setParameters(self, name):
         if self.debug: print('T: Set all parameters and assign the name \"' + name + '\"')
 
@@ -426,7 +426,7 @@ class DSS():
 
         #Get all parameter values
         parameterList = [par['v'] for par in self.param.values()]
-        
+
         #Treat the 2 delay times (address 46 and 52)
         dh, dl = parameterList[46]//128, parameterList[46]%128
         parameterList[46] = dl
@@ -478,7 +478,7 @@ class DSS():
         for key in self.msparam.keys():
             multParList.append(self.msparam[key])
 
-        soundParList = []    
+        soundParList = []
         for i in range(16):
             soundParList.append([])
             for key in self.soundparam.keys():

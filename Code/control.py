@@ -42,52 +42,52 @@ class Application():
         canvas.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, rowspan = rowspan, sticky = N+S+E+W)
 
         return canvas
-    
+
     def createSlider(self, gridpos, val, res = 1, start = 0, length = 100, width = 15, orient = 0, columnspan = 1, rowspan = 1, showvalue = True, sticky = E+S):
         slider = tk.Scale(self.frame, from_ = val[0], to = val[1], resolution = res,\
                        orient = (HORIZONTAL, VERTICAL)[orient], length = length, showvalue = showvalue, width = width)
         slider.configure(background = self.black, foreground = self.white, highlightthickness = 0, troughcolor = self.grey, activebackground = self.white, font = self.numberfont)
         slider.grid(column = gridpos[0], row = gridpos[1], rowspan = rowspan, columnspan = columnspan, sticky = sticky)
-        
+
         slider.set(start)
 
         return slider
-        
+
     def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1, requestparent = False):
         string = tk.StringVar(self.frame)
         string.set(start)
-    
+
         dropdown = tk.OptionMenu(self.frame, string, *values)
         dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2)#, activebackground = self.blue)
         dropdown.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+S)
-        
+
         if requestparent:
             return string, dropdown
 
         return string
-        
+
     def createButton(self, gridpos, text, function):
         button = tk.Button(self.frame, text = text, command = function)
         button.configure(background = self.black, foreground = self.white)
         button.grid(column = gridpos[0], row = gridpos[1], stick = N+S+E+W)
-    
+
     def createText(self, gridpos, text, columnspan = 1, sticky = W+S):
         label = tk.Label(self.frame, text = text, font = self.textfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = sticky)
-        
+
         return label
 
     def createTitle(self, gridpos, text, columnspan = 1):
         label = tk.Label(self.frame, text = text, font = self.titlefont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+W)
-        
+
         return label
 
     def createDynText(self, gridpos, columnspan = 1):
         stringvar = tk.StringVar()
-        
+
         label = tk.Label(self.frame, textvariable = stringvar, font = self.numberfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
         label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+N)
@@ -120,10 +120,10 @@ class Application():
 
     def minSizeX(self, x, width):
         self.frame.columnconfigure((x,0), minsize = width)
-        
+
     def minSizeY(self, y, width):
         self.frame.rowconfigure((0,y), minsize = width)
-       
+
 
 class DSS1multi(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
@@ -157,7 +157,7 @@ class DSS1multi(Application):
         self.createText((o, 1), 'Name', sticky = W+N)
         self.mulname = tk.Entry(self.frame, width = 12)
         self.mulname.grid(row = 1, column = o+1, sticky = E+N)
-        
+
         self.createText((o, 2), 'Length', sticky = W+N)
         self.length = self.createDynText((o+1, 2))
 
@@ -237,7 +237,7 @@ class DSS1multi(Application):
         self.loop.set(values[3])
         self.sounds.set(values[4])
         self.maxint.set(values[5])
-        self.checksum.set(values[6])
+        #self.checksum.set(values[6])
 
         for s in range(16):
             self.soundframe[s].frame.grid_remove()
@@ -275,7 +275,7 @@ class DSS1main(Application):
             canvas = param[0]
             dyntext = param[1]
             egpar = param[2]
-        
+
             #Canvas
             w,h = canvas.winfo_width(), canvas.winfo_height()
             h2 = h-10
@@ -310,7 +310,7 @@ class DSS1main(Application):
 
     def openMultisoundGUI(self):
         self.multWindow.deiconify()
- 
+
     def execCom(self, val):
         self.execcommand = val
 
@@ -497,7 +497,7 @@ class DSS1main(Application):
         self.menu.add_command(label='Set Parameters', command = lambda: self.execCom('setparameters'))
         self.menu.add_command(label='Save Program',   command = lambda: self.execCom('saveprogram'))
         self.menu.add_separator()
-        
+
 
         localmenu = tk.Menu(self.menu, tearoff=0)
         localmenu.add_command(label='Save to file',   command = lambda: self.execCom('savefile'))
@@ -642,7 +642,7 @@ class DSS1main(Application):
         self.treb = self.createSlider((o+3, 13), (-4,8), columnspan = 3)
         self.createText((o, 14), 'Bass', columnspan = 3)
         self.bass = self.createSlider((o+3, 14), (-4,8), columnspan = 3)
-  
+
     #VCA EG
         self.egvc = self.createCanvas((o, 17), columnspan = 6, rowspan = 2, size=(225,100))
         self.egva = self.createSlider((o, 19),   (63,0), orient = 1, rowspan = 2)
@@ -704,7 +704,7 @@ class DSS1main(Application):
         self.omgd = self.createSlider((o+1, h+3), (0,15))
         self.createText((o, h+4), 'Mode')
         self.omgm = self.createDropdown((o+1, h+4), ['Off', 'Osc1', 'Osc2', 'Both'], start = 'Both')
-       
+
         o += 3
 
         self.createTitle((o, h), 'Filter MG', columnspan = 2)
@@ -768,7 +768,7 @@ class DSS1main(Application):
         o += 7
         o += 6
 
-    #Aftertouch 
+    #Aftertouch
         self.createTitle((o, h), 'Aftertouch', columnspan = 6)
         self.createText((o, h+1), 'Osc MG Int', columnspan = 3)
         self.aftmgi= self.createSlider((o+3, h+1), (0,15), columnspan = 3)

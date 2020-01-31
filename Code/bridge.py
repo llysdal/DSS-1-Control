@@ -32,7 +32,7 @@ def loadFile(dss, gui):
     if fh.checkPatch(name):
         dss.putParameters(fh.loadPatch(name))
         dss.setParameters(name)
-        
+
 
 def updateControl(dss, gui):
     #Program list
@@ -50,7 +50,7 @@ def updateControl(dss, gui):
     #Set new multisound names
     if len(dss.multiName) > 0:
         gui.oscms = dss.multiName
-    
+
     m = gui.osc1wo.children['menu']
     m.delete(0,16)
     for i in range(len(gui.oscms)):
@@ -76,7 +76,7 @@ def updateControl(dss, gui):
     #Multisound values
     multParList = dss.extractMultisoundParameters()
     gui.mult.setValues(multParList)
-    
+
 
 def multisoundOpen(dss, gui):
     dss.getMultisoundsList()
@@ -90,4 +90,4 @@ def getMultisound(dss, gui):
         print('A: No multisound selected')
 
 def getPCM(dss, gui):
-    dss.getPCM(0, 1020)
+    dss.getPCM(0, 8020)

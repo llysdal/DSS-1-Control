@@ -11,7 +11,7 @@ def getConfig():
         file.close()
 
         dataSplit = data.split('\n')
-        
+
         config = {}
         for configuration in dataSplit:
             splitPoint = configuration.index('=')
@@ -26,7 +26,7 @@ def getConfig():
         return False, {}
 
 def checkPatch(name):
-    try: 
+    try:
         file = open(curDir+'/Patches/'+name, 'r')
         file.close()
         return True

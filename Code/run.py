@@ -27,8 +27,8 @@ dss.getMultisoundsList()
 #Start GUI
 root = GUI.tk.Tk()
 gui = GUI.DSS1main(root,
-                  titlefont = ('Microgramma D Extended', 16), 
-                  textfont  = ('Lucida Sans', 11), 
+                  titlefont = ('Microgramma D Extended', 16),
+                  textfont  = ('Lucida Sans', 11),
                   numberfont= ('Lucida Sans', 8))
 
 
@@ -50,7 +50,7 @@ if not received:
 
 
 def updateTask():
-    #EG Curves    
+    #EG Curves
     gui.egUpdate()
 
     #GUI functions - Main
@@ -86,7 +86,7 @@ def updateTask():
 
         gui.mult.execCom(0)
 
-   
+
 
 
     #Check for sysex messages
