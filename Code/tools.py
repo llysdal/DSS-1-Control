@@ -1,10 +1,10 @@
 midi = __import__('midi')
-from time import clock
+from time import time
 
 
-def delay(time = 0.1):
-    t = clock()
-    while clock() < t+time:
+def delay(delayTime = 0.1):
+    t = time()
+    while time() < t+delayTime:
         pass
 
 def chooseDevices(devices, config):

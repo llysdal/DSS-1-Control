@@ -4,7 +4,6 @@ midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
 b = __import__('bridge')
-from time import clock
 
 #Preinit config
 configPresent, config = fh.getConfig()
