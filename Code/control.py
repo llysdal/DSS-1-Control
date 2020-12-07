@@ -138,6 +138,8 @@ class DSS1multi(Application):
     def setup(self):
         self.master.title('Korg DSS-1 Multisound Control')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        
+        self.master.resizable(False, False)
 
         self.menu = self.createMenu()
         self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
@@ -487,6 +489,8 @@ class DSS1main(Application):
     def setup(self):
         self.master.title('Korg DSS-1 Main Control')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        
+        self.master.resizable(False, False)
 
         self.multWindow = tk.Toplevel(self.master)
         self.mult = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
@@ -522,14 +526,14 @@ class DSS1main(Application):
         #Background
         backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))
         backlabel = tk.Label(self.frame, image=backimage, bd = 0)
-        #backlabel.place(x=0, y=0)
+        backlabel.place(x=0, y=0)
         backlabel.image = backimage
 
 
-        self.minSizeY( 0, 5)
+        self.minSizeY( 0, 0)
         self.minSizeX( 0, 5)
-        self.minSizeX(33, 5)
-        self.minSizeY(28, 5)
+        self.minSizeX(33, 20)
+        self.minSizeY(29, 20)
 
     #Program management
         self.createText((1, 0), 'Program', sticky = W+S)
@@ -538,6 +542,8 @@ class DSS1main(Application):
 
         self.progname = tk.Entry(self.frame, width = 12)
         self.progname.grid(row = 1, column = 2, sticky = E+N)
+        
+        self.minSizeY(3, 20)
 
         o = 1
     #Autobend
@@ -619,6 +625,7 @@ class DSS1main(Application):
         self.filtereg = self.createSlider((o+3, 15), (0, 63), columnspan = 3)
         self.createText((o, 16), 'EG Invert', columnspan = 3)
         self.filterinv= self.createCheckbutton((o+3, 16), text = '', columnspan = 3)
+        self.minSizeY(16, 35)
 
     #Filter EG
         self.egfc = self.createCanvas((o, 17), columnspan = 6, rowspan = 2, size=(225,100))
@@ -641,7 +648,7 @@ class DSS1main(Application):
         o += 1
 
     #VCA
-        self.createTitle((o, 10), 'VCA', columnspan = 6)
+        self.createTitle((o, 10), 'Amplifier', columnspan = 6)
         self.createText((o, 11), 'Level', columnspan = 3)
         self.vcal = self.createSlider((o+3, 11), (0,63), columnspan = 3)
         self.createText((o, 12), 'KBD Decay', columnspan = 3)
@@ -700,7 +707,7 @@ class DSS1main(Application):
 
     #MOD Section
         o = 4
-        h = 16
+        h = 17
 
     #MG
         self.createTitle((o, h), 'Osc MG', columnspan = 2)
@@ -745,7 +752,7 @@ class DSS1main(Application):
 
     #Velocity Sensitive
         o = 1
-        h = 22
+        h = 23
 
         self.minSizeY(h-1, 50)
 
@@ -797,10 +804,20 @@ class DSS1main(Application):
         o += 7
 
     #Voice
-        self.createTitle((o, h), 'Voice', columnspan = 2)
+        self.createTitle((o, h), 'Voices', columnspan = 2)
         self.createText((o, h+1), 'Assign Mode')
         self.assign = self.createDropdown((o+1, h+1), ['Poly 1', 'Poly 2', 'Unison'], start = 'Poly 1')
         self.createText((o, h+2), 'Uni Voices')
         self.unia = self.createDropdown((o+1, h+2), [1,2,4,8], start = 4)
         self.createText((o, h+3), 'Uni Detune')
         self.unid = self.createSlider((o+1, h+3), [0,7], start = 4)
+
+
+# root = tk.Tk()
+# gui = DSS1main(root,
+#                   titlefont = ('Microgramma D Extended', 16),
+#                   textfont  = ('Lucida Sans', 11),
+#                   numberfont= ('Lucida Sans', 8))
+
+# root.protocol("WM_DELETE_WINDOW", lambda: quit())
+# root.mainloop()
