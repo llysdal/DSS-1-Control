@@ -50,7 +50,7 @@ if not received:
 
 def updateTask():
     #EG Curves
-    gui.egUpdate()
+    gui.egUpdate(proportional = False)
 
     #GUI functions - Main
     com = gui.execcommand

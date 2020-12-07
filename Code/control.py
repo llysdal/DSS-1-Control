@@ -268,7 +268,7 @@ class DSS1main(Application):
         #Workaround
         self.oscrange = 0
 
-    def egUpdate(self):
+    def egUpdate(self, proportional):
 
         for param in ((self.egfc, (self.egfat, self.egfdt, self.egfslt, self.egfrt), (self.egfa, self.egfd, self.egfb, self.egfsl, self.egfs, self.egfr)),
                       (self.egvc, (self.egvat, self.egvdt, self.egvslt, self.egvrt), (self.egva, self.egvd, self.egvb, self.egvsl, self.egvs, self.egvr))):
@@ -276,14 +276,30 @@ class DSS1main(Application):
             dyntext = param[1]
             egpar = param[2]
 
+            #Times
+            attackTime  = 5*exp(0.15*egpar[0].get())
+            decayTime   = 5*exp(0.135*egpar[1].get())
+            slopeTime   = 5*exp(0.15*egpar[3].get())
+            releaseTime = 5*exp(0.135*egpar[5].get())
+            
+            totalTime = attackTime + decayTime + slopeTime + releaseTime
+
             #Canvas
             w,h = canvas.winfo_width(), canvas.winfo_height()
             h2 = h-10
             canvas.delete('all')
-            attack = (w/4 * egpar[0].get()/63, h-h2)
-            decay = (w/4 * egpar[1].get()/63+attack[0], h-h2*egpar[2].get()/63)
-            slope = (w/4 * egpar[3].get()/63+decay[0], h-h2*egpar[4].get()/63)
-            sustain = (w-w/4 * egpar[5].get()/63, h-h2*egpar[4].get()/63)
+            #More traditional constant visualisation
+            if not proportional:
+              attack = (w/4 * egpar[0].get()/63, h-h2)
+              decay = (w/4 * egpar[1].get()/63+attack[0], h-h2*egpar[2].get()/63)
+              slope = (w/4 * egpar[3].get()/63+decay[0], h-h2*egpar[4].get()/63)
+              sustain = (w-w/4 * egpar[5].get()/63, h-h2*egpar[4].get()/63)
+            #Proportional visualisation
+            else:
+              attack = (attackTime / totalTime * w, h-h2)
+              decay = (decayTime / totalTime * w + attack[0], h-h2*egpar[2].get()/63)
+              slope = (slopeTime / totalTime * w + decay[0], h-h2*egpar[4].get()/63)
+              sustain = (w - releaseTime / totalTime * w, h-h2*egpar[4].get()/63)
             release = (w, h)
 
             canvas.create_line((0, h, attack[0], attack[1]), fill = '#2b7cff')
@@ -291,14 +307,6 @@ class DSS1main(Application):
             canvas.create_line((decay[0], decay[1], slope[0], slope[1]), fill = '#2b7cff')
             canvas.create_line((slope[0], slope[1], sustain[0], sustain[1]), fill = '#2b7cff')
             canvas.create_line((sustain[0], sustain[1], release[0], release[1]), fill = '#2b7cff')
-
-            #Text
-            attackTime  = 5*exp(0.15*egpar[0].get())
-            decayTime   = 5*exp(0.135*egpar[1].get())
-            slopeTime   = 5*exp(0.15*egpar[3].get())
-            releaseTime = 5*exp(0.135*egpar[5].get())
-
-            #print('decay = ' + str(egpar[1].get()) + '  -  ' + str(decayTime))
 
             for i, time in enumerate((attackTime, decayTime, slopeTime, releaseTime)):
                 if time < 9.9:
