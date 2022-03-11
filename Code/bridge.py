@@ -76,11 +76,9 @@ def updateControl(dss, gui):
     #Multisound values
     multParList = dss.extractMultisoundParameters()
     gui.mult.setValues(multParList)
-
-
-def multisoundOpen(dss, gui):
-    pass
-    # updateControl(dss, gui)
+    
+    #Samples
+    gui.sample.setSamples(dss.samples)
 
 def getMultisound(dss, gui):
     try:
@@ -105,8 +103,29 @@ def setMultisound(dss, gui):
     dss.getMultisoundsList()
     getMultisound(dss, gui)
 
+def addSample(dss, gui):
+    sampleLocation = gui.sample.sampleLocation
+    
+    sampleName = sampleLocation.split('/')[-1]
+    start = dss.getSampleMemoryFreeLoc()
+    
+    wave = fh.loadWavNormalize(sampleLocation)
+    length = len(wave)
+    
+    dss.addSample(sampleName, start, length)
+    dss.setPCM(wave, start)
+    
+    dss.updateGUI = True
+
+def loadSampleMap(dss, gui):
+    dss.samples = gui.sample.loadedSampleMap.copy()
+    dss.updateGUI = True
+
+def saveSampleMap(dss, gui):
+    gui.sample.savesamplemap(dss.samples)
+
 def getPCM(dss, gui):
-    dss.getPCM(0, 4096)
+    dss.getPCM(0, 11000)
     
 def setPCM(dss, gui):
     # wave = fh.loadWavNormalize('snare16b')

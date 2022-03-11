@@ -1,6 +1,6 @@
 fh = __import__('filehandler')
 import tkinter as tk
-from tkinter import N,S,E,W, HORIZONTAL, VERTICAL, BROWSE
+from tkinter import N,S,E,W, HORIZONTAL, VERTICAL, BROWSE, filedialog
 from math import exp
 
 midiKeys = []
@@ -78,10 +78,10 @@ class Application():
 
         return label
 
-    def createTitle(self, gridpos, text, columnspan = 1):
+    def createTitle(self, gridpos, text, columnspan = 1, sticky = E+W):
         label = tk.Label(self.frame, text = text, font = self.titlefont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
-        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+W)
+        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = sticky)
 
         return label
 
@@ -124,6 +124,106 @@ class Application():
     def minSizeY(self, y, width):
         self.frame.rowconfigure((0,y), minsize = width)
 
+
+class DSS1sample(Application):
+    def __init__(self, master, titlefont, textfont, numberfont):
+        self.init(master, titlefont, textfont, numberfont)
+        self.setup()
+
+        self.loadedSampleMap = []
+
+        self.execcommand = 0
+
+    def execCom(self, val):
+        self.execcommand = val
+    
+    def addsample(self):
+        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/Samples')
+        if self.sampleLocation:
+            self.execCom('addsample')
+        self.master.lift()
+        
+    def savesamplemap(self, samplemap):
+        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/SampleMaps')
+        if file:
+            for s in samplemap:
+                file.write(f'{s[0]}!{s[1]}!{s[2]}\n')
+            file.close()
+        self.master.lift()
+        
+    def loadsamplemap(self):
+        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/SampleMaps')
+
+        if file:
+            self.loadedSampleMap = []
+            for data in file:
+                d = data.split('!')
+                self.loadedSampleMap.append([d[0], int(d[1]), int(d[2])])
+    
+            self.execCom('loadsamplemap')
+        self.master.lift()
+        
+    def setup(self):
+        self.master.title('Korg DSS-1 Sample Memory')
+        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        
+        self.master.minsize(300, 80)
+        
+        self.master.resizable(False, False)
+
+        self.menu = self.createMenu()
+        self.menu.add_command(label='Add Sample', command = self.addsample)
+        self.menu.add_command(label='Save Samplemap', command = lambda: self.execCom('savesamplemap'))
+        self.menu.add_command(label='Load Samplemap', command = self.loadsamplemap)
+ 
+        self.minSizeY(0, 0)
+        self.minSizeX(0, 5)
+        self.minSizeX(100, 5)
+        self.minSizeY(100, 5)
+
+        self.createTitle((1,1), 'Sample Memory', columnspan=3, sticky=W+N)
+        
+        self.sampleframe = []
+        for s in range(32):
+            self.sampleframe.append(Application())
+
+            f = self.sampleframe[s]
+
+            f.init(self.frame, self.titlefont, self.textfont, self.numberfont)
+            
+            if s < 8:
+                f.frame.grid(column = 1+s, row = 2)
+            elif s < 16:
+                f.frame.grid(column = 1+(s-8), row = 3)
+            elif s < 24:
+                f.frame.grid(column = 1+(s-16), row = 4)
+            elif s < 32:
+                f.frame.grid(column = 1+(s-24), row = 5)
+                
+            f.minSizeX(0, 100)
+            f.minSizeY(5, 20)
+
+            f.name = f.createDynText((0, 0))
+            f.name.set('sample.wav')
+
+            f.start = f.createDynText((0, 1))
+            f.start.set('start')
+
+            f.length = f.createDynText((0, 2))
+            f.length.set('length')
+            
+            f.frame.grid_remove()
+    
+    def setSamples(self, samples):
+        for s in range(32):
+            self.sampleframe[s].frame.grid_remove()
+
+        for s, sample in enumerate(samples):
+            self.sampleframe[s].name.set(sample[0])
+            self.sampleframe[s].start.set(sample[1])
+            self.sampleframe[s].length.set(sample[2])
+            self.sampleframe[s].frame.grid()
+        
 
 class DSS1multi(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
@@ -308,6 +408,10 @@ class DSS1main(Application):
 
         #Workaround
         self.oscrange = 0
+        
+        
+        self.lastOsc1 = 0
+        self.lastOsc2 = 0
 
     def egUpdate(self, proportional):
 
@@ -359,6 +463,9 @@ class DSS1main(Application):
 
     def openMultisoundGUI(self):
         self.multWindow.deiconify()
+        
+    def openSampleGUI(self):
+        self.sampleWindow.deiconify()
 
     def execCom(self, val):
         self.execcommand = val
@@ -444,7 +551,16 @@ class DSS1main(Application):
         self.unia.set((1,2,4,8)[values[77]])
 
     def getValues(self):
-        return (self.osc1v.get(),
+        try:
+            osc1 = self.oscms.index(self.osc1w.get())
+            osc2 = self.oscms.index(self.osc2w.get())
+            self.lastOsc1 = osc1
+            self.lastOsc2 = osc2
+        except:
+            osc1 = self.lastOsc1
+            osc2 = self.lastOsc2
+        
+        data = (self.osc1v.get(),
                 self.osc2v.get(),
                 self.autoi.get(),
                 self.noise.get(),
@@ -502,8 +618,8 @@ class DSS1main(Application):
                 self.mgam2.get(),
                 self.mgbm2.get(),
                 self.d2mi.get(),
-                self.oscms.index(self.osc1w.get()),
-                self.oscms.index(self.osc2w.get()),
+                osc1,
+                osc2,
                 self.oscrange,
                 self.osc2s.get(),
                 ('6 bits', '7 bits', '8 bits', '10 bits', '12 bits').index(self.oscres.get()),
@@ -523,6 +639,8 @@ class DSS1main(Application):
                 ('Poly 1', 'Poly 2', 'Unison').index(self.assign.get()),
                 (1,2,4,8).index(int(self.unia.get())))
 
+        return data
+
     #Gui setup, this is gonna be long
     #Dont touch anything here please
     def setup(self):
@@ -535,6 +653,11 @@ class DSS1main(Application):
         self.mult = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
         self.multWindow.withdraw()
         self.multWindow.protocol("WM_DELETE_WINDOW", lambda: self.multWindow.withdraw())
+        
+        self.sampleWindow = tk.Toplevel(self.master)
+        self.sample = DSS1sample(self.sampleWindow, self.titlefont, self.textfont, self.numberfont)
+        self.sampleWindow.withdraw()
+        self.sampleWindow.protocol("WM_DELETE_WINDOW", lambda: self.sampleWindow.withdraw())
 
         self.menu = self.createMenu()
 
@@ -556,13 +679,16 @@ class DSS1main(Application):
         self.menu.add_cascade(label='Local', menu=localmenu)
 
         self.menu.add_separator()
-        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI() and self.execCom('multiopen'))
+        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI())
+
+        self.menu.add_separator()
+        self.menu.add_command(label='Sample Memory', command = lambda: self.openSampleGUI())
 
         self.menu.add_separator()
         self.menu.add_command(label='Get Soundmemory', command = lambda: self.execCom('getpcm'))
         
-        self.menu.add_separator()
-        self.menu.add_command(label='Set Soundmemory', command = lambda: self.execCom('setpcm'))
+        # self.menu.add_separator()
+        # self.menu.add_command(label='Set Soundmemory', command = lambda: self.execCom('setpcm'))
 
 
         #Background

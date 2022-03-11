@@ -71,8 +71,6 @@ def updateTask():
             b.loadFile(dss, gui)
         elif com == 'updatecontrol':
             b.updateControl(dss, gui)
-        elif com == 'multiopen':
-            b.multisoundOpen(dss, gui)
         elif com == 'getpcm':
             b.getPCM(dss, gui)
         elif com == 'setpcm':
@@ -89,6 +87,18 @@ def updateTask():
             b.setMultisound(dss, gui)
 
         gui.mult.execCom(0)
+        
+    #GUI functions - Sample Memory
+    com = gui.sample.execcommand
+    if type(com) == str:
+        if com == 'addsample':
+            b.addSample(dss, gui)
+        elif com == 'loadsamplemap':
+            b.loadSampleMap(dss, gui)
+        elif com == 'savesamplemap':
+            b.saveSampleMap(dss, gui)
+        
+        gui.sample.execCom(0)
 
 
 

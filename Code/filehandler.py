@@ -58,8 +58,8 @@ def loadPatch(name):
     return dataTreated
 
 
-def loadWav(name):
-    file = wave.open(curDir + '/Samples/' + name + '.wav', 'r')
+def loadWav(loc):
+    file = wave.open(loc, 'r')
     data = []
     
     samples = file.getnframes()
@@ -74,14 +74,14 @@ def loadWav(name):
             data = file.readframes(1)
             waveData.append(struct.unpack('<i', data + (b'\0' if data[2] < 128 else b'\xff'))[0])
     else:
-        print(f'FH: Unsupported bit width ({bitwidth} bits) for {name}.wav')
+        print(f'FH: Unsupported bit width ({bitwidth} bits) for {loc}')
 
     file.close()
 
     return bitwidth, waveData
 
-def loadWavNormalize(name):
-    bitwidth, waveData = loadWav(name)
+def loadWavNormalize(loc):
+    bitwidth, waveData = loadWav(loc)
 
     return [
         sample / (2 << (bitwidth-2))

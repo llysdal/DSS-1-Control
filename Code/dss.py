@@ -46,6 +46,8 @@ class DSS():
         self.pcmRange = 261885
         self.pcmMaxTime = 11
         self.pcm      = []
+        
+        self.samples = []
 
         #Multisound dictionary
         self.multiAmount = 0
@@ -180,6 +182,13 @@ class DSS():
 
         return sysex
     
+    def addSample(self, sampleName, start, length):
+        self.samples.append([sampleName, start, length])
+        print(self.samples)
+        
+    def getSampleMemoryFreeLoc(self):
+        return sum([s[2] for s in self.samples])
+    
     def pcmEncodeSample(self, sample):
         b = bin(max(0, min(4095, int(sample*2048)+2048)))[2:].zfill(12)
         
@@ -221,8 +230,6 @@ class DSS():
                 for i in range(self.multiAmount):
                     self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
                     self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
-                    
-                print(self.multiAmount)
 
                 self.updateGUI = True
 
@@ -392,9 +399,9 @@ class DSS():
 
         midi.sendSysex(self.output, sysex)
         
-    def setPCM(self, wave):
-        start = 0
-        end = len(wave)
+    def setPCM(self, wave, offset):
+        start = offset
+        end = len(wave) + offset
         
         if self.debug: print('T: Sending PCM from address ' + str(start) + ' to ' + str(end))
 
