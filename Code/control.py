@@ -143,40 +143,45 @@ class DSS1multi(Application):
 
         self.menu = self.createMenu()
         self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
-        self.menu.add_command(label='*/Set Multisound/*', command = lambda: self.execCom('setmultisound'))
+        self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
 
+        self.minSizeY(0, 0)
+        self.minSizeX(0, 5)
+        self.minSizeX(100, 5)
+        self.minSizeY(100, 5)
 
         #Multisound selector
-        self.createTitle((0,0), 'Multisound')
+        self.createTitle((1,1), 'Multisound')
 
         self.multisound = tk.Listbox(self.frame, selectmode=BROWSE, height = 16)
         for i in range(16):
             self.multisound.insert(1000, str(i+1))
-        self.multisound.grid(row = 1, column = 0, rowspan = 16, sticky = W+N)
+        self.multisound.grid(row = 2, column = 1, rowspan = 16, sticky = W+N)
 
-        o = 2
+        o = 3
         #Multisound editing
-        self.createText((o, 1), 'Name', sticky = W+N)
+        self.createText((o, 2), 'Name', sticky = W+N)
         self.mulname = tk.Entry(self.frame, width = 12)
-        self.mulname.grid(row = 1, column = o+1, sticky = E+N)
+        self.mulname.grid(row = 2, column = o+1, sticky = E+N)
 
-        self.createText((o, 2), 'Length', sticky = W+N)
-        self.length = self.createDynText((o+1, 2))
+        self.createText((o, 3), 'Length', sticky = W+N)
+        self.length = self.createDynText((o+1, 3))
 
-        self.createText((o, 3), 'Looping', sticky = W+N)
-        self.loop = self.createCheckbutton((o+1, 3), text = '', sticky = E+N)
+        self.createText((o, 4), 'Looping', sticky = W+N)
+        self.loop = self.createCheckbutton((o+1, 4), text = '', sticky = E+N)
 
-        self.createText((o, 4), 'Sounds', sticky = W+N)
-        self.sounds = spinbox(self.frame, from_=1, to=16, width = 2, command = lambda: self.execCom('reloadsounds'))
-        self.sounds.grid(row = 4, column = o+1, sticky = E+N)
+        self.createText((o, 5), 'Sounds', sticky = W+N)
+        self.sounds = spinbox(self.frame, from_=1, to=16, width = 2, command = lambda: self.reloadSounds())
+        self.sounds.grid(row = 5, column = o+1, sticky = E+N)
 
-        self.createText((o, 5), 'Max interval', sticky = W+N)
-        self.maxint = self.createDynText((o+1, 5))
+        self.createText((o, 6), 'Max interval', sticky = W+N)
+        self.maxint = self.createDynText((o+1, 6))
 
         #self.createText((o, 6), 'Checksum', sticky = W+N)
         #self.checksum = self.createDynText((o+1, 6))
 
-        o+=2
+        o+=3
+        self.minSizeX(o-1, 15)
 
         self.soundframe = []
         for s in range(16):
@@ -185,9 +190,10 @@ class DSS1multi(Application):
             f = self.soundframe[s]
 
             f.init(self.frame, self.titlefont, self.textfont, self.numberfont)
-
+            
             if s < 6:
                 f.frame.grid(column = o+s, row = 1, rowspan = 18)
+                f.frame.columnconfigure((o+s-1, 1), minsize = 10)
             elif s >= 12:
                 f.frame.grid(column = o+s-12, row = 21)
             else:
@@ -216,21 +222,26 @@ class DSS1multi(Application):
             f.createText((0, 7), 'Samp. Freq.')
             f.freq = f.createDropdown((1, 7), ['32kHz', '24kHz', '16kHz', '48kHz'], start = '32kHz')
 
-            f.createText((0, 8), 'Word Adr.')
-            f.soundwadr = f.createDynText((1, 8))
+            f.createText((0, 8), 'Sound Size')
+            f.soundwadr = f.createSpinbox((1, 8), from_=1, to=261886, width = 8)
             f.createText((0, 9), 'Start Adr.')
-            f.soundsadr = f.createDynText((1, 9))
+            f.soundsadr = f.createSpinbox((1, 9), from_=0, to=261885, width = 8)
             f.createText((0, 10), 'Length')
-            f.soundlen = f.createDynText((1, 10))
+            f.soundlen = f.createSpinbox((1, 10), from_=1, to=261886, width = 8)
 
             f.createText((0, 11), 'Loop S. Adr.')
-            f.loopsadr = f.createDynText((1, 11))
+            f.loopsadr = f.createSpinbox((1, 11), from_=0, to=261885, width = 8)
             f.createText((0, 12), 'Loop Length')
-            f.looplen = f.createDynText((1, 12))
+            f.looplen = f.createSpinbox((1, 12), from_=1, to=261886, width = 8)
 
             f.frame.grid_remove()
 
+    def reloadSounds(self):
+        for s in range(16):
+            self.soundframe[s].frame.grid_remove()
 
+        for s in range(int(self.sounds.get())):
+            self.soundframe[s].frame.grid()
 
     def setValues(self, values):
         self.mulname.delete(0,100)
@@ -247,7 +258,7 @@ class DSS1multi(Application):
         for s in range(values[4]):
             self.soundframe[s].topkey.set(midiKeys[values[7][s][0]])
             self.soundframe[s].origkey.set(midiKeys[values[7][s][1]])
-            self.soundframe[s].tune.set(values[7][s][2]-63)
+            self.soundframe[s].tune.set(values[7][s][2]-64)
             self.soundframe[s].level.set(values[7][s][3])
             self.soundframe[s].cutoff.set(values[7][s][4])
             self.soundframe[s].soundwadr.set(values[7][s][5])
@@ -258,6 +269,34 @@ class DSS1multi(Application):
             self.soundframe[s].transpose.set(values[7][s][10])
             self.soundframe[s].freq.set(['32kHz', '24kHz', '16kHz', '48kHz'][values[7][s][11]])
             self.soundframe[s].frame.grid()
+            
+    def getValues(self):
+      soundAmount = int(self.sounds.get())
+      
+      soundData = [
+        (
+          midiKeys.index(s.topkey.get()),
+          midiKeys.index(s.origkey.get()),
+          s.tune.get() + 64,
+          s.level.get(),
+          s.cutoff.get(),
+          int(s.soundwadr.get()),
+          int(s.soundsadr.get()),
+          int(s.soundlen.get()),
+          int(s.loopsadr.get()),
+          int(s.looplen.get()),
+          s.transpose.get(),
+          ('32kHz', '24kHz', '16kHz', '48kHz').index(s.freq.get())
+        )
+        for s in self.soundframe[:soundAmount]
+      ]
+      
+      return (
+        self.mulname.get(), #name
+        self.loop.get(), #looping
+        soundAmount, #number of sounds
+        soundData #sound parameters
+      )
 
 
 class DSS1main(Application):
@@ -521,6 +560,9 @@ class DSS1main(Application):
 
         self.menu.add_separator()
         self.menu.add_command(label='Get Soundmemory', command = lambda: self.execCom('getpcm'))
+        
+        self.menu.add_separator()
+        self.menu.add_command(label='Set Soundmemory', command = lambda: self.execCom('setpcm'))
 
 
         #Background

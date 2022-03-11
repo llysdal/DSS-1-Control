@@ -20,7 +20,10 @@ sysexGet = {'mode'          : [EST, korgID, formID, dssID, 0x12, EOX],
 sysexSet = {'playmode'      : [EST, korgID, formID, dssID, 0x13, EOX],
             'parameter'     : [EST, korgID, formID, dssID, 0x41, 'parameter', 'value', EOX],
             'parameters'    : [EST, korgID, formID, dssID, 0x40, 'parameters', 'name', EOX],
-            'writeprogram'  : [EST, korgID, formID, dssID, 0x11, 'program', EOX]}
+            'writeprogram'  : [EST, korgID, formID, dssID, 0x11, 'program', EOX],
+            'multisound'    : [EST, korgID, formID, dssID, 0x44, 'number', 'name', 'length', 'loopsounds', 'maxinterval', 'soundparams', 'checksum', EOX],
+            'multisoundlist': [EST, korgID, formID, dssID, 0x45, 'amount', 'data', 'checksum', EOX],
+            'pcmdata'       : [EST, korgID, formID, dssID, 0x43, 'start', 'end', 'data', 'checksum', EOX]}
 
 class DSS():
     def __init__(self, inputID, outputID):
@@ -176,6 +179,23 @@ class DSS():
         sysex[1] = int(binary[18], 2) * (2**6)
 
         return sysex
+    
+    def pcmEncodeSample(self, sample):
+        b = bin(max(0, min(4095, int(sample*2048)+2048)))[2:].zfill(12)
+        
+        sysex = [0, 0]
+        
+        sysex[0] = int(b[7:12], 2) << 2
+        sysex[1] = int(b[0:7], 2)
+        
+        return sysex
+    
+    def pcmEncode(self, samples):
+        return [b for s in samples for b in self.pcmEncodeSample(s)]
+
+    def checksum(self, data):
+        checksum = bin(sum(data))[2:].zfill(8)[-7:]
+        return int(checksum, 2)
 
     def pcmEstimate(self, length):
         #Sysex delay times half the pcm length
@@ -194,13 +214,15 @@ class DSS():
                 if self.debug: print('R: Multi sound name list')
                 self.multiLen = []
                 self.multiName = []
-
+            
                 #Assigning data
                 self.multiAmount = sysex[5]
 
                 for i in range(self.multiAmount):
                     self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
                     self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
+                    
+                print(self.multiAmount)
 
                 self.updateGUI = True
 
@@ -277,11 +299,12 @@ class DSS():
                     self.pcm.append(pcmVal)
                     sysex = sysex[2:]
 
-                #grapher.showGraph(self.pcm, self.pcmStart)
+                grapher.showGraph(self.pcm, self.pcmStart)
 
             #Program Name List
             elif sysex[4] == 0x46:
                 if self.debug: print('R: Program name list')
+                
                 for i in range(32):
                     self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
 
@@ -368,11 +391,77 @@ class DSS():
         sysex[endIndex:endIndex+1] = self.lenEncode(end)
 
         midi.sendSysex(self.output, sysex)
+        
+    def setPCM(self, wave):
+        start = 0
+        end = len(wave)
+        
+        if self.debug: print('T: Sending PCM from address ' + str(start) + ' to ' + str(end))
+
+        if start < 0 or start > self.pcmRange or end < start or end > self.pcmRange:
+            print('A: PCM dump out of bounds, cancelling')
+            return
+
+        est = self.pcmEstimate(end-start)
+        print('A: PCM estimated time is {0:.1f}s'.format(est))
+        if est > self.pcmMaxTime:
+            print('A: PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
+            return
+
+        sysex = sysexSet['pcmdata'].copy()
+        startIndex = sysex.index('start')
+        pcmStart = self.lenEncode(start)
+        sysex[startIndex:startIndex+1] = pcmStart
+
+        endIndex = sysex.index('end')
+        pcmEnd = self.lenEncode(end)
+        sysex[endIndex:endIndex+1] = pcmEnd
+        
+        dataIndex = sysex.index('data')
+        pcmSamples = self.pcmEncode(wave)
+        sysex[dataIndex:dataIndex+1] = pcmSamples
+        
+        checksumIndex = sysex.index('checksum')
+        sysex[checksumIndex] = self.checksum(sysex[startIndex:checksumIndex])
+
+        midi.sendSysex(self.output, sysex)
 
     def getMultisoundsList(self):
         if self.debug: print('T: Request multisound list')
 
         midi.sendSysex(self.output, sysexGet['multisoundlist'])
+        
+    def setMultisoundsListAfterMultisoundSet(self, progno, multisound):   
+        name, loop, soundAmount, sounds = multisound
+        while len(name) < 8:
+            name += ' '
+        length = sum([s[5] for s in sounds])
+        
+        if progno == self.multiAmount:
+            self.multiAmount += 1
+            self.multiName.append(name)
+            self.multiLen.append(length)
+        else:
+            self.multiName[progno] = name
+            self.multiLen[progno] = length
+            
+        self.setMultisoundsList()
+        
+    def setMultisoundsList(self):
+        if self.debug: print('T: Setting multisound list')
+
+        sysex = sysexSet['multisoundlist'].copy()
+        
+        amountIndex = sysex.index('amount')
+        sysex[amountIndex] = self.multiAmount
+        
+        dataIndex = sysex.index('data')
+        sysex[dataIndex:dataIndex+1] = [x for name, length in zip(self.multiName, self.multiLen) for x in (*list(map(ord, name.ljust(8))), *self.lenEncode(length))]
+        
+        checksumIndex = sysex.index('checksum')
+        sysex[checksumIndex] = self.checksum(sysex[amountIndex:checksumIndex])
+
+        midi.sendSysex(self.output, sysex)
 
     def getMultisound(self, number):
         if self.debug:
@@ -385,6 +474,47 @@ class DSS():
         sysex = sysexGet['multisound'].copy()
         sysex[sysex.index('number')] = number
 
+        midi.sendSysex(self.output, sysex)
+        
+    def setMultisound(self, no, multisound):
+        if self.debug:
+            print(f'T: Sending multisound parameters for multisound {no}')
+        
+        name, loop, soundAmount, sounds = multisound
+        
+        while len(name) < 8:
+            name += ' '
+        nameList = list(map(ord, name[0:8]))
+        
+        
+        sysex = sysexSet['multisound'].copy()
+        
+        noIndex = sysex.index('number')
+        sysex[noIndex] = no
+        
+        nameIndex = sysex.index('name')
+        sysex[nameIndex:nameIndex+1] = nameList
+        
+        length = sum([s[5] for s in sounds])
+        lengthIndex = sysex.index('length')
+        sysex[lengthIndex:lengthIndex+1] = self.lenEncode(length)
+        sysex[sysex.index('loopsounds')] = (loop << 6) + soundAmount
+        sysex[sysex.index('maxinterval')] = 7
+        
+        soundParamIndex = sysex.index('soundparams')
+        sysex[soundParamIndex:soundParamIndex+1] = [v for s in sounds for v in (
+            s[0], s[1], s[2], s[3], s[4],
+            *self.lenEncode(s[5]),
+            *self.lenEncode(s[6]),
+            *self.lenEncode(s[7]),
+            *self.lenEncode(s[8]),
+            *self.lenEncode(s[9]),
+            ((1-s[10]) << 6) + s[11]
+        )]
+        
+        checksumIndex = sysex.index('checksum')
+        sysex[checksumIndex] = self.checksum(sysex[noIndex:checksumIndex])
+        
         midi.sendSysex(self.output, sysex)
 
     def getParameters(self, program):

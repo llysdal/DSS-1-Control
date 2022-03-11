@@ -46,6 +46,7 @@ while True:
         break
 if not received:
     print('A: Communications failed!')
+    input('...')
 
 
 def updateTask():
@@ -74,6 +75,8 @@ def updateTask():
             b.multisoundOpen(dss, gui)
         elif com == 'getpcm':
             b.getPCM(dss, gui)
+        elif com == 'setpcm':
+            b.setPCM(dss, gui)
 
         gui.execCom(0)
 
@@ -82,6 +85,8 @@ def updateTask():
     if type(com) == str:
         if com == 'getmultisound':
             b.getMultisound(dss, gui)
+        elif com == 'setmultisound':
+            b.setMultisound(dss, gui)
 
         gui.mult.execCom(0)
 

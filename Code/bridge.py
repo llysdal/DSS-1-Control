@@ -79,8 +79,8 @@ def updateControl(dss, gui):
 
 
 def multisoundOpen(dss, gui):
-    dss.getMultisoundsList()
-    updateControl(dss, gui)
+    pass
+    # updateControl(dss, gui)
 
 def getMultisound(dss, gui):
     try:
@@ -89,5 +89,26 @@ def getMultisound(dss, gui):
     except:
         print('A: No multisound selected')
 
+def setMultisound(dss, gui):
+    progno = gui.mult.multisound.curselection()
+    
+    if len(progno) < 1: 
+        print('A: No multisound slot selected')
+        return
+    progno = progno[0]
+    
+    if progno >= dss.multiAmount: progno = dss.multiAmount
+    
+    msn = gui.mult.getValues()
+    dss.setMultisound(progno, msn)
+    dss.setMultisoundsListAfterMultisoundSet(progno, msn)
+    dss.getMultisoundsList()
+    getMultisound(dss, gui)
+
 def getPCM(dss, gui):
-    dss.getPCM(0, 8020)
+    dss.getPCM(0, 4096)
+    
+def setPCM(dss, gui):
+    # wave = fh.loadWavNormalize('snare16b')
+    wave = fh.loadWavNormalize('snare24b')
+    dss.setPCM(wave)

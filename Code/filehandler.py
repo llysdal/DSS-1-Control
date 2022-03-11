@@ -1,4 +1,4 @@
-import os
+import os, wave, struct
 curDir = os.path.dirname(os.path.abspath(__file__))[0:-4]
 
 def getRessourcePath(name):
@@ -56,3 +56,34 @@ def loadPatch(name):
 
     print('FH: Loaded ' + name + ' successfully')
     return dataTreated
+
+
+def loadWav(name):
+    file = wave.open(curDir + '/Samples/' + name + '.wav', 'r')
+    data = []
+    
+    samples = file.getnframes()
+    bitwidth = file.getsampwidth() * 8
+   
+    if bitwidth == 16:
+        frames = file.readframes(samples)
+        waveData = struct.unpack_from('<%dh' % samples, frames)
+    elif bitwidth == 24:
+        waveData = []
+        for i in range(0, samples-1):
+            data = file.readframes(1)
+            waveData.append(struct.unpack('<i', data + (b'\0' if data[2] < 128 else b'\xff'))[0])
+    else:
+        print(f'FH: Unsupported bit width ({bitwidth} bits) for {name}.wav')
+
+    file.close()
+
+    return bitwidth, waveData
+
+def loadWavNormalize(name):
+    bitwidth, waveData = loadWav(name)
+
+    return [
+        sample / (2 << (bitwidth-2))
+        for sample in waveData
+    ]
