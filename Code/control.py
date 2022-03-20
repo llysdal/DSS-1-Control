@@ -2,6 +2,7 @@ fh = __import__('filehandler')
 import tkinter as tk
 from tkinter import N,S,E,W, HORIZONTAL, VERTICAL, BROWSE, filedialog
 from math import exp
+import json
 
 midiKeys = []
 for o in range(-1, 10):
@@ -244,6 +245,9 @@ class DSS1multi(Application):
         self.menu = self.createMenu()
         self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
         self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
+        self.menu.add_command(label='Save Multisound', command = self.saveMultisound)
+        self.menu.add_command(label='Load Multisound', command = self.loadMultisound)
+
 
         self.minSizeY(0, 0)
         self.minSizeX(0, 5)
@@ -342,6 +346,30 @@ class DSS1multi(Application):
 
         for s in range(int(self.sounds.get())):
             self.soundframe[s].frame.grid()
+
+    def saveMultisound(self):
+        file = filedialog.asksaveasfile(title='Save Multisound', filetypes=[('Multisound', '.multi')], defaultextension='.multi', initialdir=fh.curDir+'/Data/Multisounds')
+        if file:
+            json.dump(self.getValues(), file)
+            file.close()
+        self.master.lift()
+        
+    def loadMultisound(self):
+        file = filedialog.askopenfile(title='Load Multisound', filetypes=[('Multisound', '.multi')], initialdir=fh.curDir+'/Data/Multisounds')
+
+        if file:
+            data = json.load(file)
+            self.setValues((
+                0,      #prog no
+                data[0],#name
+                sum([s[5] for s in data[3]]),   #length
+                data[1],#loop
+                data[2],#sounds
+                max([s[0] - s[1] + (0, -7, -12, 5)[s[11]] for s in data[3]]),   #max int
+                0,      #checksum
+                data[3] #sounds
+            ))
+        self.master.lift()
 
     def setValues(self, values):
         self.mulname.delete(0,100)

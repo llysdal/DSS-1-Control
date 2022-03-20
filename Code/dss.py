@@ -506,7 +506,7 @@ class DSS():
         lengthIndex = sysex.index('length')
         sysex[lengthIndex:lengthIndex+1] = self.lenEncode(length)
         sysex[sysex.index('loopsounds')] = (loop << 6) + soundAmount
-        sysex[sysex.index('maxinterval')] = 7
+        sysex[sysex.index('maxinterval')] = max([s[0] - s[1] + (0, -7, -12, 5)[s[11]] for s in sounds])
         
         soundParamIndex = sysex.index('soundparams')
         sysex[soundParamIndex:soundParamIndex+1] = [v for s in sounds for v in (

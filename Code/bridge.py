@@ -103,6 +103,12 @@ def setMultisound(dss, gui):
     dss.getMultisoundsList()
     getMultisound(dss, gui)
 
+def saveMultisound(dss, gui):
+    pass
+
+def loadMultisound(dss, gui):
+    pass
+
 def addSample(dss, gui):
     sampleLocation = gui.sample.sampleLocation
     
