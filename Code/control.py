@@ -217,19 +217,19 @@ class DSS1sample(Application):
         self.execcommand = val
     
     def addsample(self):
-        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/Samples', parent=self.master)
+        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/Data/Samples', parent=self.master)
         if self.sampleLocation:
             self.execCom('addsample')
         
     def savesamplemap(self, samplemap):
-        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/SampleMaps', parent=self.master)
+        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/Data/SampleMaps', parent=self.master)
         if file:
             for s in samplemap:
                 file.write(f'{s[0]}!{s[1]}!{s[2]}\n')
             file.close()
         
     def loadsamplemap(self):
-        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/SampleMaps', parent=self.master)
+        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/Data/SampleMaps', parent=self.master)
 
         if file:
             self.loadedSampleMap = []

@@ -3,7 +3,6 @@ GUI = __import__('control')
 midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
-grapher = __import__('grapher')
 
 
 #GUI functions
@@ -40,7 +39,10 @@ def updateControl(dss, gui):
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
 
     #Mode
-    gui.mode.set(dss.modeNames[dss.mode] + ' Mode')
+    if dss.mode >= 0 and dss.mode <= 8:
+        gui.mode.set(dss.modeNames[dss.mode] + ' Mode')
+    else:
+        gui.mode.set('Unknown Mode')
     
     #Parameters
     parList = dss.extractParameters()

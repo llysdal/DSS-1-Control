@@ -1,6 +1,5 @@
 midi = __import__('midi')
 t = __import__('tools')
-grapher = __import__('grapher')
 
 channel = 0
 

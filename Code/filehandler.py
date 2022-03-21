@@ -25,37 +25,37 @@ def getConfig():
         print('FH: Config file not found / wrong format')
         return False, {}
 
-def checkPatch(name):
-    try:
-        file = open(curDir+'/Patches/'+name, 'r')
-        file.close()
-        return True
-    except:
-        print('FH: \'' + name + '\' not found')
-        return False
+# def checkPatch(name):
+#     try:
+#         file = open(curDir+'/Patches/'+name, 'r')
+#         file.close()
+#         return True
+#     except:
+#         print('FH: \'' + name + '\' not found')
+#         return False
 
-def savePatch(name, data):
-    file = open(curDir+'/Patches/'+name, 'w')
+# def savePatch(name, data):
+#     file = open(curDir+'/Patches/'+name, 'w')
 
-    for i in range(len(data)-1):
-        file.write(str(data[i]) + '\n')
-    file.write(str(data[len(data)-1]))
+#     for i in range(len(data)-1):
+#         file.write(str(data[i]) + '\n')
+#     file.write(str(data[len(data)-1]))
 
-    file.close()
-    print('FH: Saved ' + name + ' successfully')
+#     file.close()
+#     print('FH: Saved ' + name + ' successfully')
 
-def loadPatch(name):
-    file = open(curDir+'/Patches/'+name, 'r')
-    data = file.read()
-    file.close()
+# def loadPatch(name):
+#     file = open(curDir+'/Patches/'+name, 'r')
+#     data = file.read()
+#     file.close()
 
-    dataSplit = data.split('\n')
-    dataTreated = []
-    for i in range(len(dataSplit)):
-        dataTreated.append(int(dataSplit[i]))
+#     dataSplit = data.split('\n')
+#     dataTreated = []
+#     for i in range(len(dataSplit)):
+#         dataTreated.append(int(dataSplit[i]))
 
-    print('FH: Loaded ' + name + ' successfully')
-    return dataTreated
+#     print('FH: Loaded ' + name + ' successfully')
+#     return dataTreated
 
 
 def loadWav(loc):
