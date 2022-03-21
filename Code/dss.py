@@ -31,9 +31,21 @@ class DSS():
         self.output = midi.getMidiOutputDevice(outputID)
 
         self.updateGUI = False
+        self.emitPCM = False
         self.debug = True
-        #Assume he's in playmode
+        #Assume she's in playmode
         self.mode = 0
+        self.modeNames = (
+            'Play',
+            'Sample',
+            'Edit Sample',
+            'Create Waveform',
+            'Multisound',
+            'MIDI',
+            'System',
+            'Disk Utility',
+            'Program Parameter'
+        )
         #Namelist
         self.namelist = []
         for i in range(32):
@@ -44,7 +56,7 @@ class DSS():
         self.pcmEnd   = 0
         self.pcmLen   = 0
         self.pcmRange = 261885
-        self.pcmMaxTime = 11
+        self.pcmMaxTime = 999999
         self.pcm      = []
         
         self.samples = []
@@ -184,7 +196,6 @@ class DSS():
     
     def addSample(self, sampleName, start, length):
         self.samples.append([sampleName, start, length])
-        print(self.samples)
         
     def getSampleMemoryFreeLoc(self):
         return sum([s[2] for s in self.samples])
@@ -215,8 +226,9 @@ class DSS():
         if sysex[0:4] == [EST, korgID, formID, dssID]:
             #Mode Data
             if sysex[4] == 0x42:
-                if self.debug: print('R: Mode data')
+                if self.debug: print(f'R: Mode data')
                 self.mode = sysex[5]
+                self.updateGUI = True
 
             #Multi Sound List
             elif sysex[4] == 0x45:
@@ -230,6 +242,12 @@ class DSS():
                 for i in range(self.multiAmount):
                     self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
                     self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
+                    
+                while len(self.multiName) < 16:
+                    self.multiName.append(f'EMPTY {len(self.multiName)+1:02d}')
+                    
+                while len(self.multiLen) < 16:
+                    self.multiLen.append(0)
 
                 self.updateGUI = True
 
@@ -306,7 +324,7 @@ class DSS():
                     self.pcm.append(pcmVal)
                     sysex = sysex[2:]
 
-                grapher.showGraph(self.pcm, self.pcmStart)
+                self.emitPCM = True
 
             #Program Name List
             elif sysex[4] == 0x46:
@@ -446,11 +464,8 @@ class DSS():
         
         if progno == self.multiAmount:
             self.multiAmount += 1
-            self.multiName.append(name)
-            self.multiLen.append(length)
-        else:
-            self.multiName[progno] = name
-            self.multiLen[progno] = length
+        self.multiName[progno] = name
+        self.multiLen[progno] = length
             
         self.setMultisoundsList()
         
@@ -482,6 +497,14 @@ class DSS():
         sysex[sysex.index('number')] = number
 
         midi.sendSysex(self.output, sysex)
+        
+    def deleteMultisound(self, no):
+        # pre: no is the last multisound in the list
+        self.multiAmount -= 1
+        self.multiLen.pop()
+        self.multiName.pop()
+        
+        self.setMultisoundsList()
         
     def setMultisound(self, no, multisound):
         if self.debug:

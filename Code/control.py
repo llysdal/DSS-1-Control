@@ -2,6 +2,7 @@ fh = __import__('filehandler')
 import tkinter as tk
 from tkinter import N,S,E,W, HORIZONTAL, VERTICAL, BROWSE, filedialog
 from math import exp
+import wave, struct
 import json
 
 midiKeys = []
@@ -86,12 +87,12 @@ class Application():
 
         return label
 
-    def createDynText(self, gridpos, columnspan = 1):
+    def createDynText(self, gridpos, columnspan = 1, sticky = E+N):
         stringvar = tk.StringVar()
 
         label = tk.Label(self.frame, textvariable = stringvar, font = self.numberfont, justify = 'left')
         label.configure(background = self.black, foreground = self.white)
-        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+N)
+        label.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = sticky)
 
         return stringvar
 
@@ -104,11 +105,11 @@ class Application():
 
         return intvar
 
-    def createSpinbox(self, gridpos, from_ = 0, to = 10, values = [], width = 2, sticky = E+N):
+    def createSpinbox(self, gridpos, from_ = 0, to = 10, values = [], width = 2, sticky = E+N, command = lambda: None):
         if len(values) > 0:
-            spin = spinbox(self.frame, values = values, width = width)
+            spin = spinbox(self.frame, values = values, width = width, command = command)
         else:
-            spin = spinbox(self.frame, from_=from_, to=to, width = width)
+            spin = spinbox(self.frame, from_=from_, to=to, width = width, command = command)
         spin.grid(column = gridpos[0], row = gridpos[1], sticky = sticky)
 
         return spin
@@ -125,6 +126,83 @@ class Application():
     def minSizeY(self, y, width):
         self.frame.rowconfigure((0,y), minsize = width)
 
+class DSS1pcm(Application):
+    def __init__(self, master, titlefont, textfont, numberfont):
+        self.init(master, titlefont, textfont, numberfont)
+        self.setup()
+
+        self.loadedSampleMap = []
+
+        self.execcommand = 0
+        
+    def execCom(self, val):
+        self.execcommand = val
+        
+    def pcmEstimate(self, length):
+        #Sysex delay times half the pcm length
+        return 0.002 * (length/2)
+        
+    def fetch(self):
+        self.filename = filedialog.asksaveasfilename(title='Save PCM sample', filetypes=[('PCM', '.wav')], defaultextension='.wav', initialdir=fh.curDir+'/Data/Samples', parent=self.master)
+        
+        self.execCom('fetchsample')
+            
+    def saveData(self, data):
+        if not self.filename: 
+            print('A: No file selected for saving PCM data')
+            return
+        
+        file = wave.open(self.filename, 'w')
+        
+        if file:
+            print('FH: Writing .wav file...')
+            file.setnchannels(1)
+            file.setsampwidth(2)
+            file.setframerate(24000)
+            for p in data:
+                file.writeframesraw(struct.pack('<h', p * 16))
+            file.close()
+            print('FH: Done writing .wav file!')
+            self.filename = None
+        else:
+            print('A: Failed to open file for writing')
+        
+    def pcmEndAdjust(self):
+        self.pcmEnd.config(from_ = self.pcmStart.get())
+        self.pcmEstUpdate()
+        
+    def pcmEstUpdate(self):
+        start = int(self.pcmStart.get())
+        end = int(self.pcmEnd.get())
+        self.pcmEst.set(f'{self.pcmEstimate(end - start):.2f}s')
+        
+    def setup(self):
+        self.master.title('Save PCM')
+        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        
+        self.master.minsize(200, 100)
+        
+        self.master.resizable(False, False)
+ 
+        self.minSizeY(0, 15)
+        self.minSizeX(0, 15)
+        self.minSizeX(100, 15)
+        self.minSizeY(100, 15)
+
+        self.createTitle((1,1), 'PCM', columnspan=2, sticky=W+N)
+        self.createButton((3,1), 'Fetch', self.fetch)
+        
+        self.createText((1, 2), 'Start Address')
+        self.pcmStart = self.createSpinbox((1, 3), from_=0, to=261886, width = 10, command = self.pcmEndAdjust)
+        self.pcmStart.bind('<Return>', lambda x: self.pcmEndAdjust())
+        
+        self.createText((2, 2), 'End Address')
+        self.pcmEnd = self.createSpinbox((2, 3), from_=0, to=261886, width = 10, command = self.pcmEstUpdate)
+        self.pcmEnd.bind('<Return>', lambda x: self.pcmEstUpdate())
+        
+        self.createText((3, 2), 'Time Estimate')
+        self.pcmEst = self.createDynText((3, 3))
+        self.pcmEst.set('0s')
 
 class DSS1sample(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
@@ -139,21 +217,19 @@ class DSS1sample(Application):
         self.execcommand = val
     
     def addsample(self):
-        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/Samples')
+        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/Samples', parent=self.master)
         if self.sampleLocation:
             self.execCom('addsample')
-        self.master.lift()
         
     def savesamplemap(self, samplemap):
-        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/SampleMaps')
+        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/SampleMaps', parent=self.master)
         if file:
             for s in samplemap:
                 file.write(f'{s[0]}!{s[1]}!{s[2]}\n')
             file.close()
-        self.master.lift()
         
     def loadsamplemap(self):
-        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/SampleMaps')
+        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/SampleMaps', parent=self.master)
 
         if file:
             self.loadedSampleMap = []
@@ -162,20 +238,30 @@ class DSS1sample(Application):
                 self.loadedSampleMap.append([d[0], int(d[1]), int(d[2])])
     
             self.execCom('loadsamplemap')
-        self.master.lift()
+        
+    def savepcm(self):
+        self.pcmWindow.deiconify()
         
     def setup(self):
-        self.master.title('Korg DSS-1 Sample Memory')
+        self.master.title('Sample Memory')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
         
-        self.master.minsize(300, 80)
+        self.master.minsize(440, 80)
         
         self.master.resizable(False, False)
+        
+        self.pcmWindow = tk.Toplevel(self.master)
+        self.pcm = DSS1pcm(self.pcmWindow, self.titlefont, self.textfont, self.numberfont)
+        self.pcmWindow.withdraw()
+        self.pcmWindow.protocol("WM_DELETE_WINDOW", lambda: self.pcmWindow.withdraw() or self.master.lift())
 
         self.menu = self.createMenu()
         self.menu.add_command(label='Add Sample', command = self.addsample)
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
         self.menu.add_command(label='Save Samplemap', command = lambda: self.execCom('savesamplemap'))
         self.menu.add_command(label='Load Samplemap', command = self.loadsamplemap)
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
+        self.menu.add_command(label='Save PCM data', command = self.savepcm)
  
         self.minSizeY(0, 0)
         self.minSizeX(0, 5)
@@ -230,6 +316,9 @@ class DSS1multi(Application):
     def __init__(self, master, titlefont, textfont, numberfont):
         self.init(master, titlefont, textfont, numberfont)
         self.setup()
+        
+        self.no = 0
+        self.multiLen = []
 
         self.execcommand = 0
 
@@ -237,16 +326,20 @@ class DSS1multi(Application):
         self.execcommand = val
 
     def setup(self):
-        self.master.title('Korg DSS-1 Multisound Control')
+        self.master.title('Multisound Control')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
         
         self.master.resizable(False, False)
 
         self.menu = self.createMenu()
-        self.menu.add_command(label='Get Multisound', command = lambda: self.execCom('getmultisound'))
-        self.menu.add_command(label='Set Multisound', command = lambda: self.execCom('setmultisound'))
-        self.menu.add_command(label='Save Multisound', command = self.saveMultisound)
-        self.menu.add_command(label='Load Multisound', command = self.loadMultisound)
+        self.menu.add_command(label='Get List', command = lambda: self.execCom('getmultisoundlist'))
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
+        self.menu.add_command(label='Get', command = lambda: self.execCom('getmultisound'))
+        self.menu.add_command(label='Set', command = lambda: self.execCom('setmultisound'))
+        self.menu.add_command(label='Delete', command = lambda: self.execCom('deletemultisound'))
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
+        self.menu.add_command(label='Save', command = self.saveMultisound)
+        self.menu.add_command(label='Load', command = self.loadMultisound)
 
 
         self.minSizeY(0, 0)
@@ -329,16 +422,44 @@ class DSS1multi(Application):
             f.createText((0, 8), 'Sound Size')
             f.soundwadr = f.createSpinbox((1, 8), from_=1, to=261886, width = 8)
             f.createText((0, 9), 'Start Adr.')
-            f.soundsadr = f.createSpinbox((1, 9), from_=0, to=261885, width = 8)
+            f.soundsadr = f.createSpinbox((1, 9), from_=0, to=261885, width = 8, command = lambda s=s: self.updateSoundAbs(s))
             f.createText((0, 10), 'Length')
-            f.soundlen = f.createSpinbox((1, 10), from_=1, to=261886, width = 8)
+            f.soundlen = f.createSpinbox((1, 10), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
 
             f.createText((0, 11), 'Loop S. Adr.')
             f.loopsadr = f.createSpinbox((1, 11), from_=0, to=261885, width = 8)
             f.createText((0, 12), 'Loop Length')
             f.looplen = f.createSpinbox((1, 12), from_=1, to=261886, width = 8)
+            
+            f.createText((0, 13), 'Abs. Start')
+            f.absstart = f.createDynText((1, 13))
+            f.absstart.set(0)
+            f.createText((0, 14), 'Abs. End')
+            f.absend = f.createDynText((1, 14))
+            f.absend.set(0)
+            f.createText((0, 15), 'Abs. Loop Start')
+            f.absloopstart = f.createDynText((1, 15))
+            f.absloopstart.set(0)
+            f.createText((0, 16), 'Abs. Loop End')
+            f.absloopend = f.createDynText((1, 16))
+            f.absloopend.set(0)
 
             f.frame.grid_remove()
+
+    def updateSoundAbs(self, s):
+        f = self.soundframe[s]
+        
+        start = int(f.soundsadr.get())
+        length = int(f.soundlen.get())
+        loopstart = int(f.loopsadr.get())
+        looplen = int(f.looplen.get())
+        
+        offset = sum(self.multiLen[:self.no])
+        
+        f.absstart.set(offset+start)
+        f.absend.set(offset+start+length)
+        f.absloopstart.set(offset+start+loopstart)
+        f.absloopend.set(offset+start+loopstart+looplen)
 
     def reloadSounds(self):
         for s in range(16):
@@ -348,14 +469,13 @@ class DSS1multi(Application):
             self.soundframe[s].frame.grid()
 
     def saveMultisound(self):
-        file = filedialog.asksaveasfile(title='Save Multisound', filetypes=[('Multisound', '.multi')], defaultextension='.multi', initialdir=fh.curDir+'/Data/Multisounds')
+        file = filedialog.asksaveasfile(title='Save Multisound', filetypes=[('Multisound', '.multi')], defaultextension='.multi', initialdir=fh.curDir+'/Data/Multisounds', parent=self.master)
         if file:
             json.dump(self.getValues(), file)
             file.close()
-        self.master.lift()
         
     def loadMultisound(self):
-        file = filedialog.askopenfile(title='Load Multisound', filetypes=[('Multisound', '.multi')], initialdir=fh.curDir+'/Data/Multisounds')
+        file = filedialog.askopenfile(title='Load Multisound', filetypes=[('Multisound', '.multi')], initialdir=fh.curDir+'/Data/Multisounds', parent=self.master)
 
         if file:
             data = json.load(file)
@@ -369,9 +489,9 @@ class DSS1multi(Application):
                 0,      #checksum
                 data[3] #sounds
             ))
-        self.master.lift()
 
     def setValues(self, values):
+        self.no = values[0]
         self.mulname.delete(0,100)
         self.mulname.insert(0, values[1])
         self.length.set(values[2])
@@ -383,7 +503,7 @@ class DSS1multi(Application):
         for s in range(16):
             self.soundframe[s].frame.grid_remove()
 
-        for s in range(values[4]):
+        for i, s in enumerate(range(values[4])):
             self.soundframe[s].topkey.set(midiKeys[values[7][s][0]])
             self.soundframe[s].origkey.set(midiKeys[values[7][s][1]])
             self.soundframe[s].tune.set(values[7][s][2]-64)
@@ -392,11 +512,13 @@ class DSS1multi(Application):
             self.soundframe[s].soundwadr.set(values[7][s][5])
             self.soundframe[s].soundsadr.set(values[7][s][6])
             self.soundframe[s].soundlen.set(values[7][s][7])
-            self.soundframe[s].loopsadr.set(values[7][s][8])
+            self.soundframe[s].loopsadr.set(values[7][s][8] - values[7][s][6])
             self.soundframe[s].looplen.set(values[7][s][9])
             self.soundframe[s].transpose.set(values[7][s][10])
             self.soundframe[s].freq.set(['32kHz', '24kHz', '16kHz', '48kHz'][values[7][s][11]])
             self.soundframe[s].frame.grid()
+            
+            self.updateSoundAbs(i)
             
     def getValues(self):
       soundAmount = int(self.sounds.get())
@@ -411,7 +533,7 @@ class DSS1multi(Application):
           int(s.soundwadr.get()),
           int(s.soundsadr.get()),
           int(s.soundlen.get()),
-          int(s.loopsadr.get()),
+          int(s.loopsadr.get()) + int(s.soundsadr.get()),
           int(s.looplen.get()),
           s.transpose.get(),
           ('32kHz', '24kHz', '16kHz', '48kHz').index(s.freq.get())
@@ -425,6 +547,41 @@ class DSS1multi(Application):
         soundAmount, #number of sounds
         soundData #sound parameters
       )
+
+class DSS1proglist(Application):
+    def __init__(self, master, titlefont, textfont, numberfont):
+        self.init(master, titlefont, textfont, numberfont)
+        self.setup()
+
+        self.execcommand = 0
+
+    def execCom(self, val):
+        self.execcommand = val
+
+    def setup(self):
+        self.master.title('Program List')
+        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        
+        self.master.minsize(300, 80)
+        
+        self.master.resizable(False, False)
+
+        self.menu = self.createMenu()
+        self.menu.add_command(label='Get List', command = lambda: self.execCom('getprogramlist'))
+
+
+        self.minSizeY(0, 0)
+        self.minSizeX(0, 15)
+        self.minSizeX(100, 15)
+        self.minSizeY(100, 15)
+
+        #Program viewer
+        self.createTitle((1,1), 'Program List')
+
+        self.programs = tk.Listbox(self.frame, selectmode=BROWSE, height = 32)
+        for i in range(32):
+            self.programs.insert(1000, str(i+1))
+        self.programs.grid(row = 2, column = 1, rowspan = 32, sticky = W+N)
 
 
 class DSS1main(Application):
@@ -489,6 +646,12 @@ class DSS1main(Application):
                 else:
                     dyntext[i].set('{0:.2g}s'.format(time/1000))
 
+    def setMode(self, mode):
+        self.mode.set(mode)
+
+    def openProgramList(self):
+        self.proglistWindow.deiconify()
+
     def openMultisoundGUI(self):
         self.multWindow.deiconify()
         
@@ -499,6 +662,17 @@ class DSS1main(Application):
         self.execcommand = val
 
     def setValues(self, values):
+        if values[58] < len(self.oscms): 
+            osc1 = self.oscms[values[58]]
+        else: 
+            osc1 = self.oscms[0]
+            
+        if values[59] < len(self.oscms): 
+            osc2 = self.oscms[values[59]]
+        else: 
+            osc2 = self.oscms[0]
+            
+        
         self.osc1v.set(values[0])
         self.osc2v.set(values[1])
         self.autoi.set(values[2])
@@ -557,8 +731,8 @@ class DSS1main(Application):
         self.mgam2.set(values[55])
         self.mgbm2.set(values[56])
         self.d2mi.set(values[57])
-        self.osc1w.set(self.oscms[values[58]])
-        self.osc2w.set(self.oscms[values[59]])
+        self.osc1w.set(osc1)
+        self.osc2w.set(osc2)
         self.oscrange = values[60]
         self.osc2s.set(values[61])
         self.oscres.set(('6 bits', '7 bits', '8 bits', '10 bits', '12 bits')[values[62]])
@@ -669,6 +843,26 @@ class DSS1main(Application):
 
         return data
 
+    def saveProgram(self):
+        file = filedialog.asksaveasfile(title='Save Program', filetypes=[('Program', '.pgm')], defaultextension='.pgm', initialdir=fh.curDir+'/Data/Programs')
+        if file:
+            data = [
+                self.progname.get(),
+                self.getValues()
+            ]
+            json.dump(data, file)
+            file.close()
+        
+    def loadProgram(self):
+        file = filedialog.askopenfile(title='Load Program', filetypes=[('Program', '.pgm')], initialdir=fh.curDir+'/Data/Programs')
+
+        if file:
+            data = json.load(file)
+            self.progname.delete(0, 100)
+            self.progname.insert(0, data[0])
+            self.setValues(data[1])
+            file.close()
+
     #Gui setup, this is gonna be long
     #Dont touch anything here please
     def setup(self):
@@ -676,6 +870,11 @@ class DSS1main(Application):
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
         
         self.master.resizable(False, False)
+        
+        self.proglistWindow = tk.Toplevel(self.master)
+        self.proglist = DSS1proglist(self.proglistWindow, self.titlefont, self.textfont, self.numberfont)
+        self.proglistWindow.withdraw()
+        self.proglistWindow.protocol("WM_DELETE_WINDOW", lambda: self.proglistWindow.withdraw())
 
         self.multWindow = tk.Toplevel(self.master)
         self.mult = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
@@ -688,32 +887,47 @@ class DSS1main(Application):
         self.sampleWindow.protocol("WM_DELETE_WINDOW", lambda: self.sampleWindow.withdraw())
 
         self.menu = self.createMenu()
-
-        optionmenu = tk.Menu(self.menu, tearoff=0)
-        self.autoget = tk.IntVar()
-        optionmenu.add_checkbutton(label="Autoget parameters", variable=self.autoget)
-        self.menu.add_cascade(label='Options', menu=optionmenu)
-        self.menu.add_separator()
-
+        
+        systemmenu = tk.Menu(self.menu, tearoff=0)
+        systemmenu.add_command(label="Get Mode", command = lambda: self.execCom('getmode'))
+        systemmenu.add_command(label="Set Playmode", command = lambda: self.execCom('playmode'))
+        self.menu.add_cascade(label='System', menu=systemmenu)
+        
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
+        
         self.menu.add_command(label='Get Parameters', command = lambda: self.execCom('getparameters'))
         self.menu.add_command(label='Set Parameters', command = lambda: self.execCom('setparameters'))
-        self.menu.add_command(label='Save Program',   command = lambda: self.execCom('saveprogram'))
-        self.menu.add_separator()
+        
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
+
+        programmenu = tk.Menu(self.menu, tearoff=0)
+        programmenu.add_command(label='Show Program List',   command = self.openProgramList)
+        programmenu.add_command(label='Save Program on DSS-1',   command = lambda: self.execCom('saveprogram'))
+        programmenu.add_separator()
+        programmenu.add_command(label='Save Program locally',   command = self.saveProgram)
+        programmenu.add_command(label='Load Program',   command = self.loadProgram)
+        self.menu.add_cascade(label='Programs', menu=programmenu)
 
 
-        localmenu = tk.Menu(self.menu, tearoff=0)
-        localmenu.add_command(label='Save to file',   command = lambda: self.execCom('savefile'))
-        localmenu.add_command(label='Load from file', command = lambda: self.execCom('loadfile'))
-        self.menu.add_cascade(label='Local', menu=localmenu)
+        # localmenu = tk.Menu(self.menu, tearoff=0)
+        # localmenu.add_command(label='Save to file',   command = lambda: self.execCom('savefile'))
+        # localmenu.add_command(label='Load from file', command = lambda: self.execCom('loadfile'))
+        # self.menu.add_cascade(label='Local', menu=localmenu)
 
-        self.menu.add_separator()
-        self.menu.add_command(label='Multisounds', command = lambda: self.openMultisoundGUI())
+        self.menu.add_command(label='Multisounds', command = self.openMultisoundGUI)
 
-        self.menu.add_separator()
-        self.menu.add_command(label='Sample Memory', command = lambda: self.openSampleGUI())
+        self.menu.add_command(label='Sample Memory', command = self.openSampleGUI)
+        
+        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
+        
+        optionmenu = tk.Menu(self.menu, tearoff=0)
+        self.autoget = tk.IntVar()
+        self.autoget.set(1)
+        optionmenu.add_checkbutton(label="Auto-Get Parameters", variable=self.autoget)
+        self.menu.add_cascade(label='Options', menu=optionmenu)
 
-        self.menu.add_separator()
-        self.menu.add_command(label='Get Soundmemory', command = lambda: self.execCom('getpcm'))
+        # self.menu.add_separator()
+        # self.menu.add_command(label='Get Soundmemory', command = lambda: self.execCom('getpcm'))
         
         # self.menu.add_separator()
         # self.menu.add_command(label='Set Soundmemory', command = lambda: self.execCom('setpcm'))
@@ -733,11 +947,14 @@ class DSS1main(Application):
 
     #Program management
         self.createText((1, 0), 'Program', sticky = W+S)
-        self.prog = tk.Spinbox(self.frame, from_=1, to=32, width = 2, command = lambda: self.execCom('changeprogram'))
+        self.prog = tk.Spinbox(self.frame, from_=1, to=32, width = 4, command = lambda: self.execCom('changeprogram'))
         self.prog.grid(row = 0, column = 2, sticky = E+S)
 
         self.progname = tk.Entry(self.frame, width = 12)
         self.progname.grid(row = 1, column = 2, sticky = E+N)
+        
+        self.mode = self.createDynText((1,1), sticky = W+N)
+        self.mode.set('Unknown Mode')
         
         self.minSizeY(3, 20)
 

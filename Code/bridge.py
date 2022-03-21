@@ -39,14 +39,17 @@ def updateControl(dss, gui):
     gui.progname.delete(0, 100)
     gui.progname.insert(0, dss.namelist[int(gui.prog.get())-1])
 
+    #Mode
+    gui.mode.set(dss.modeNames[dss.mode] + ' Mode')
+    
     #Parameters
     parList = dss.extractParameters()
     gui.setValues(parList)
-
+    
     #Multisound list - main window
     #Fetch current multisound values
-    osc1 = min(gui.oscms.index(gui.osc1w.get()), len(gui.oscms)-1)
-    osc2 = min(gui.oscms.index(gui.osc2w.get()), len(gui.oscms)-1)
+    # osc1 = min(gui.oscms.index(gui.osc1w.get()), len(gui.oscms)-1)
+    # osc2 = min(gui.oscms.index(gui.osc2w.get()), len(gui.oscms)-1)
     #Set new multisound names
     if len(dss.multiName) > 0:
         gui.oscms = dss.multiName
@@ -62,20 +65,25 @@ def updateControl(dss, gui):
         m.add_command(label=gui.oscms[i], command=lambda value=gui.oscms[i]: gui.osc2w.set(value))
 
     #Set values to new option values
-    gui.osc1w.set(gui.oscms[osc1])
-    gui.osc2w.set(gui.oscms[osc2])
+    # gui.osc1w.set(gui.oscms[osc1])
+    # gui.osc2w.set(gui.oscms[osc2])
 
     #Multisound list - multisound window
     gui.mult.multisound.delete(0, 100)
-    multiNameGui = dss.multiName.copy()
-    while len(multiNameGui) < 16:
-        multiNameGui.append('EMPTY')
-    for num in range(16):
-        gui.mult.multisound.insert(num, multiNameGui[num])
+    for i, name in enumerate(dss.multiName):
+        gui.mult.multisound.insert(i, name)
+
+    #Multisound lengths
+    gui.mult.multiLen = dss.multiLen
 
     #Multisound values
     multParList = dss.extractMultisoundParameters()
     gui.mult.setValues(multParList)
+    
+    #Program list - program list window
+    gui.proglist.programs.delete(0, 1000)
+    for i in range(32):
+        gui.proglist.programs.insert(i, f'{i+1:02d} - {dss.namelist[i]}')
     
     #Samples
     gui.sample.setSamples(dss.samples)
@@ -103,11 +111,24 @@ def setMultisound(dss, gui):
     dss.getMultisoundsList()
     getMultisound(dss, gui)
 
-def saveMultisound(dss, gui):
-    pass
+def deleteMultisound(dss, gui):
+    progno = gui.mult.multisound.curselection()
+    
+    if len(progno) < 1: 
+        print('A: No multisound slot selected')
+        return
+    progno = progno[0]
+    
+    if progno >= dss.multiAmount: 
+        print('A: Can\'t delete empty multisound')
+        return
+    
+    if progno != dss.multiAmount-1:
+        print("A: Can only delete last multisound for now :(")
+        return
 
-def loadMultisound(dss, gui):
-    pass
+    dss.deleteMultisound(progno)
+    dss.getMultisoundsList()
 
 def addSample(dss, gui):
     sampleLocation = gui.sample.sampleLocation
@@ -129,11 +150,4 @@ def loadSampleMap(dss, gui):
 
 def saveSampleMap(dss, gui):
     gui.sample.savesamplemap(dss.samples)
-
-def getPCM(dss, gui):
-    dss.getPCM(0, 11000)
     
-def setPCM(dss, gui):
-    # wave = fh.loadWavNormalize('snare16b')
-    wave = fh.loadWavNormalize('snare24b')
-    dss.setPCM(wave)

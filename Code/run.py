@@ -34,22 +34,24 @@ gui = GUI.DSS1main(root,
 b.getParams(dss, gui)
 
 #Startup sysex handling (handle all of the queue)
+sysexBuffer = []
 received = False
 while True:
-    sysex = midi.getSysex(dss.input)
-    if sysex[0]:
+    recv, sysex, sysexBuffer = midi.getSysex(dss.input, sysexBuffer)
+    if recv:
         if not received:
             print('A: Communication established!')
             received = True
-        dss.decodeSysex(sysex[1])
+        dss.decodeSysex(sysex)
     else:
         break
 if not received:
     print('A: Communications failed!')
     input('...')
 
+b.updateControl(dss, gui)
 
-def updateTask():
+def updateTask(sysexBuffer):
     #EG Curves
     gui.egUpdate(proportional = False)
 
@@ -61,8 +63,15 @@ def updateTask():
             b.getParams(dss, gui)
         elif com == 'setparameters':
             b.setParams(dss, gui)
+        elif com == 'getprogramlist':
+            dss.getNameList()
         elif com == 'saveprogram':
             b.saveProgram(dss, gui)
+        elif com == 'getmode':
+            dss.getMode()
+        elif com == 'playmode':
+            dss.setPlayMode()
+            dss.getMode()
         elif com == 'changeprogram':
             b.changeProgram(dss, gui)
         elif com == 'savefile':
@@ -77,6 +86,13 @@ def updateTask():
             b.setPCM(dss, gui)
 
         gui.execCom(0)
+        
+    com = gui.proglist.execcommand
+    if type(com) == str:
+        if com == 'getprogramlist':
+            dss.getNameList()
+            
+        gui.proglist.execCom(0)
 
     #GUI functions - Multisound
     com = gui.mult.execcommand
@@ -85,6 +101,10 @@ def updateTask():
             b.getMultisound(dss, gui)
         elif com == 'setmultisound':
             b.setMultisound(dss, gui)
+        elif com == 'deletemultisound':
+            b.deleteMultisound(dss, gui)
+        elif com == 'getmultisoundlist':
+            dss.getMultisoundsList()
 
         gui.mult.execCom(0)
         
@@ -100,17 +120,26 @@ def updateTask():
         
         gui.sample.execCom(0)
 
-
+    com = gui.sample.pcm.execcommand
+    if type(com) == str:
+        if com == 'fetchsample':
+            dss.getPCM(int(gui.sample.pcm.pcmStart.get()), int(gui.sample.pcm.pcmEnd.get()))
+        
+        gui.sample.pcm.execCom(0)
 
 
     #Check for sysex messages
-    sysex = midi.getSysex(dss.input)
-    if sysex[0]:
-        dss.decodeSysex(sysex[1])
+    recv, sysex, sysexBuffer = midi.getSysex(dss.input, sysexBuffer)
+    if recv:
+        dss.decodeSysex(sysex)
 
     if dss.updateGUI:
         b.updateControl(dss, gui)
         dss.updateGUI = False
+        
+    if dss.emitPCM:
+        gui.sample.pcm.saveData(dss.pcm)
+        dss.emitPCM = False
 
     #Control check
     values = gui.getValues()
@@ -119,10 +148,10 @@ def updateTask():
             dss.param[key]['v'] = values[i]
             dss.setKey(key)
 
-    gui.frame.after(50, updateTask)
+    gui.frame.after(50, updateTask, sysexBuffer)
 
 
 
 root.protocol("WM_DELETE_WINDOW", lambda: quit())
-updateTask()
+updateTask(sysexBuffer)
 root.mainloop()

@@ -27,7 +27,7 @@ def getDeviceInfo(id):
     return info
 
 def getMidiInputDevice(id):
-    return midi.Input(id)
+    return midi.Input(id, 262144)
 
 def getMidiOutputDevice(id):
     return midi.Output(id)
@@ -43,8 +43,8 @@ def receiveMidi(device):
     dataPresent = device.poll()
 
     if dataPresent:
-        message = device.read(1)
-        return message
+        messages = device.read(1024)
+        return messages
     else:
         return False
 
@@ -65,36 +65,46 @@ def checkSysex(device):
     else:
         return False, data
 
-def getSysex(device):
-    ''' Reads a sysex message from the device input.
-        Returns it as a tuple with a value for each hexadecimal value (00 to FF)
-        Always starts with a 0xF0, and ends with a 0xF7
+def printSysex(sysex):
+    print(''.join([hex(d)+' ' for d in sysex]))
 
-        If no sysex was found, returns false
-        If sysex was found, returns True and the sysex message'''
+present = 0
 
-    for attempt in range(1):
-        present, data = checkSysex(device)
+def getSysex(device, sysexBuffer):
+    #strip leading  
+    while len(sysexBuffer) > 0 and sysexBuffer[0] != 0xF0:
+        sysexBuffer.pop(0)
+    
+    sysex = sysexBuffer.copy()
+    sysexBuffer = []
+    
 
-        if present:
-            break
+    if 0xF7 in sysex:
+        endPntr = sysex.index(0xF7)
+        if endPntr+1 < len(sysex):
+            sysexBuffer = sysex[endPntr+1:].copy()
+        else:
+            sysexBuffer = []
+            
+        return True, sysex[0:endPntr+1], sysexBuffer
 
-        t.delay(0.001)
+    # while True:
+    data = receiveMidi(device)
 
-    if not present:
-        return False, []
+    if data == False:
+        return False, [], sysexBuffer
 
-    sysex = list(data[0][0])
+    for i, message in enumerate(data):
+        sysex[len(sysex):len(sysex)] = message[0]
 
-    while True:
-        data = receiveMidi(device)
+        if 0xF7 in message[0]:
+            if i+1 < len(data):
+                for m in range(i+1, len(data)):
+                    sysexBuffer[len(sysexBuffer):len(sysexBuffer)] = data[m][0]
+            else:
+                sysexBuffer = []
+            return True, sysex[0:sysex.index(0xF7)+1], sysexBuffer
+    
+    sysexBuffer[len(sysexBuffer):len(sysexBuffer)] = sysex
 
-        if data == False:
-            return False, []
-
-        sysex[len(sysex):len(sysex)] = data[0][0]
-
-        if 0xF7 in data[0][0]:
-            return True, sysex[0:sysex.index(0xF7)+1]
-
-        t.delay(0.002)
+    return False, [], sysexBuffer
