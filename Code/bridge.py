@@ -134,12 +134,14 @@ def deleteMultisound(dss, gui):
 
 def addSample(dss, gui):
     sampleLocation = gui.sample.sampleLocation
-    
+    sampleOffset = int(gui.sample.sampleOffset.get())
+        
     sampleName = sampleLocation.split('/')[-1]
-    start = dss.getSampleMemoryFreeLoc()
+    start = sampleOffset
     
     wave = fh.loadWavNormalize(sampleLocation)
     length = len(wave)
+    gui.sample.addOffset(length)
     
     dss.addSample(sampleName, start, length)
     dss.setPCM(wave, start)
@@ -148,6 +150,7 @@ def addSample(dss, gui):
 
 def loadSampleMap(dss, gui):
     dss.samples = gui.sample.loadedSampleMap.copy()
+    gui.sample.sampleOffset.set(dss.getSampleMemoryFreeLoc())
     dss.updateGUI = True
 
 def saveSampleMap(dss, gui):

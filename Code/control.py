@@ -149,23 +149,23 @@ class DSS1pcm(Application):
             
     def saveData(self, data):
         if not self.filename: 
-            print('A: No file selected for saving PCM data')
+            print('E R R O R - No file selected for saving PCM data!')
             return
         
         file = wave.open(self.filename, 'w')
         
         if file:
-            print('FH: Writing .wav file...')
+            print(f'Writing {self.filename.split("/")[-1]} file...')
             file.setnchannels(1)
             file.setsampwidth(2)
             file.setframerate(24000)
             for p in data:
                 file.writeframesraw(struct.pack('<h', p * 16))
             file.close()
-            print('FH: Done writing .wav file!')
+            print(f'Done writing {self.filename.split("/")[-1]}!')
             self.filename = None
         else:
-            print('A: Failed to open file for writing')
+            print('E R R O R - Failed to open file for writing')
         
     def pcmEndAdjust(self):
         self.pcmEnd.config(from_ = self.pcmStart.get())
@@ -242,6 +242,9 @@ class DSS1sample(Application):
     def savepcm(self):
         self.pcmWindow.deiconify()
         
+    def addOffset(self, val):
+        self.sampleOffset.set(int(self.sampleOffset.get()) + val)
+        
     def setup(self):
         self.master.title('Sample Memory')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
@@ -268,7 +271,10 @@ class DSS1sample(Application):
         self.minSizeX(100, 5)
         self.minSizeY(100, 5)
 
-        self.createTitle((1,1), 'Sample Memory', columnspan=3, sticky=W+N)
+        self.createTitle((1,1), 'Sample Memory', columnspan=2, sticky=W+N)
+        
+        self.createText((3,1), 'Offset', sticky=S+E)
+        self.sampleOffset = self.createSpinbox((4,1), from_=0, to=261886, width = 8, sticky=S+E)
         
         self.sampleframe = []
         for s in range(32):

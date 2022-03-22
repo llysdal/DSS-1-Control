@@ -25,13 +25,20 @@ sysexSet = {'playmode'      : [EST, korgID, formID, dssID, 0x13, EOX],
             'pcmdata'       : [EST, korgID, formID, dssID, 0x43, 'start', 'end', 'data', 'checksum', EOX]}
 
 class DSS():
-    def __init__(self, inputID, outputID):
+    def __init__(self, inputID, outputID, debug=False, logParameterChanges=False):
         self.input  = midi.getMidiInputDevice(inputID)
         self.output = midi.getMidiOutputDevice(outputID)
 
         self.updateGUI = False
         self.emitPCM = False
-        self.debug = True
+        self.debug = debug
+        self.logParameterChanges = logParameterChanges
+        self.trans =        '┌─T   '
+        self.transNoExp =   '  T   '
+        self.alrt =         '└──//── '
+        self.info =         '├────── '
+        self.recv =         '└──R  '
+        
         #Assume she's in playmode
         self.mode = 0
         self.modeNames = (
@@ -169,7 +176,7 @@ class DSS():
                       'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   3}}   #amount of unison voices
 
     def lenDecode(self, sysex):
-        #Retarded data coming from DSS1 (Service manual page 6 [4](1))
+        #stupid data coming from DSS1 (Service manual page 6 [4](1))
         lenSum =  min(sysex[1], 1)
         lenSum += sysex[0] * (2**1)
         lenSum += min(sysex[3], 1) * (2**8)
@@ -197,7 +204,7 @@ class DSS():
         self.samples.append([sampleName, start, length])
         
     def getSampleMemoryFreeLoc(self):
-        return sum([s[2] for s in self.samples])
+        return max([s[1] + s[2] for s in self.samples], default=0)
     
     def pcmEncodeSample(self, sample):
         b = bin(max(0, min(4095, int(sample*2048)+2048)))[2:].zfill(12)
@@ -225,13 +232,13 @@ class DSS():
         if sysex[0:4] == [EST, korgID, formID, dssID]:
             #Mode Data
             if sysex[4] == 0x42:
-                if self.debug: print(f'R: Mode data')
+                if self.debug: print(f'{self.recv}Mode data')
                 self.mode = sysex[5]
                 self.updateGUI = True
 
             #Multi Sound List
             elif sysex[4] == 0x45:
-                if self.debug: print('R: Multi sound name list')
+                if self.debug: print(f'{self.recv}Multi sound name list')
                 self.multiLen = []
                 self.multiName = []
             
@@ -252,7 +259,7 @@ class DSS():
 
             #Multi Sound Parameter Dump
             elif sysex[4] == 0x44:
-                if self.debug: print('R: Multi sound parameters')
+                if self.debug: print(f'{self.recv}Multi sound parameters')
 
                 sysex = sysex[5:-1]
 
@@ -304,7 +311,7 @@ class DSS():
 
             #PCM Data Dump
             elif sysex[4] == 0x43:
-                if self.debug: print('R: PCM data dump')
+                if self.debug: print(f'{self.recv}PCM data dump')
 
                 sysex = sysex[5:-1]
 
@@ -327,7 +334,7 @@ class DSS():
 
             #Program Name List
             elif sysex[4] == 0x46:
-                if self.debug: print('R: Program name list')
+                if self.debug: print(f'{self.recv}Program name list')
                 
                 for i in range(32):
                     self.namelist[i] = ''.join(map(chr, sysex[5+8*i:5+8*i+8]))
@@ -336,7 +343,7 @@ class DSS():
 
             #Program Parameter Dump
             elif sysex[4] == 0x40:
-                if self.debug: print('R: Program parameters')
+                if self.debug: print(f'{self.recv}Program parameters')
 
                 sysex = sysex[5:-1]
                 #Replace the stored parameters with the sysex gotten ones
@@ -354,57 +361,57 @@ class DSS():
 
             #Data Load Completed
             elif sysex[4] == 0x23:
-                if self.debug: print('R: Data load complete')
+                if self.debug: print(f'{self.recv}Data load complete')
                 pass
 
             #Data Load Error
             elif sysex[4] == 0x24:
-                if self.debug: print('R: Data load error')
+                if self.debug: print(f'{self.recv}Data load error')
                 pass
 
             #Write Completed
             elif sysex[4] == 0x21:
-                if self.debug: print('R: Write complete')
+                if self.debug: print(f'{self.recv}Write complete')
                 pass
 
             #Write Error
             elif sysex[4] == 0x22:
-                if self.debug: print('R: Write error')
+                if self.debug: print(f'{self.recv}Write error')
                 pass
 
 
     def getMode(self):
-        if self.debug: print('T: Get mode')
+        if self.debug: print(f'{self.trans}Get mode')
 
         midi.sendSysex(self.output, sysexGet['mode'])
 
     def setPlayMode(self):
-        if self.debug: print('T: Set mode to playmode')
+        if self.debug: print(f'{self.transNoExp}Set mode to playmode')
 
         midi.sendSysex(self.output, sysexSet['playmode'])
 
     def programChange(self, program):
-        if self.debug: print('T: Change program to '+ str(program+1))
+        if self.debug: print(f'{self.transNoExp}Change program to '+ str(program+1))
 
         midi.sendMidi(self.output, 192, program, 0)
         self.updateGUI = True
 
     def getNameList(self):
-        if self.debug: print('T: Request program name list')
+        if self.debug: print(f'{self.trans}Request program name list')
 
         midi.sendSysex(self.output, sysexGet['programlist'])
 
     def getPCM(self, start, end):
-        if self.debug: print('T: Request PCM from address ' + str(start) + ' to ' + str(end))
+        if self.debug: print(f'{self.trans}Request PCM from address ' + str(start) + ' to ' + str(end))
 
         if start < 0 or start > self.pcmRange or end < start or end > self.pcmRange:
-            print('A: PCM request out of bounds, cancelling')
+            print(f'{self.alrt}PCM request out of bounds, cancelling')
             return
 
         est = self.pcmEstimate(end-start)
-        print('A: PCM estimated time is {0:.1f}s'.format(est))
+        print(f'{self.info}PCM estimated time is {0:.1f}s'.format(est))
         if est > self.pcmMaxTime:
-            print('A: PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
+            print(f'{self.alrt}PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
             return
 
         sysex = sysexGet['pcmdata'].copy()
@@ -420,16 +427,16 @@ class DSS():
         start = offset
         end = len(wave) + offset
         
-        if self.debug: print('T: Sending PCM from address ' + str(start) + ' to ' + str(end))
+        if self.debug: print(f'{self.trans}Sending PCM from address ' + str(start) + ' to ' + str(end))
 
         if start < 0 or start > self.pcmRange or end < start or end > self.pcmRange:
-            print('A: PCM dump out of bounds, cancelling')
+            print(f'{self.alrt}PCM dump out of bounds, cancelling')
             return
 
         est = self.pcmEstimate(end-start)
-        print('A: PCM estimated time is {0:.1f}s'.format(est))
+        print(f'{self.info}PCM estimated time is {0:.1f}s'.format(est))
         if est > self.pcmMaxTime:
-            print('A: PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
+            print(f'{self.alrt}PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
             return
 
         sysex = sysexSet['pcmdata'].copy()
@@ -451,7 +458,7 @@ class DSS():
         midi.sendSysex(self.output, sysex)
 
     def getMultisoundsList(self):
-        if self.debug: print('T: Request multisound list')
+        if self.debug: print(f'{self.trans}Request multisound list')
 
         midi.sendSysex(self.output, sysexGet['multisoundlist'])
         
@@ -469,7 +476,7 @@ class DSS():
         self.setMultisoundsList()
         
     def setMultisoundsList(self):
-        if self.debug: print('T: Setting multisound list')
+        if self.debug: print(f'{self.trans}Setting multisound list')
 
         sysex = sysexSet['multisoundlist'].copy()
         
@@ -486,7 +493,7 @@ class DSS():
 
     def getMultisound(self, number):
         if self.debug:
-            print('T: Request multisound parameters from ', end = '')
+            print(f'{self.trans}Request multisound parameters from ', end = '')
             try:
                 print(self.multiName[number])
             except:
@@ -507,7 +514,7 @@ class DSS():
         
     def setMultisound(self, no, multisound):
         if self.debug:
-            print(f'T: Sending multisound parameters for multisound {no}')
+            print(f'{self.trans}Sending multisound parameters for multisound {no}')
         
         name, loop, soundAmount, sounds = multisound
         
@@ -548,7 +555,7 @@ class DSS():
         midi.sendSysex(self.output, sysex)
 
     def getParameters(self, program):
-        if self.debug: print('T: Request all parameters from program ' + str(program+1))
+        if self.debug: print(f'{self.trans}Request all parameters from program ' + str(program+1))
 
         sysex = sysexGet['parameters'].copy()
         sysex[sysex.index('program')] = program
@@ -556,7 +563,7 @@ class DSS():
         midi.sendSysex(self.output, sysex)
 
     def setParameter(self, parameter, value):
-        if self.debug: print('T: Set parameter ' + str(parameter) + ' to ' + str(value))
+        if self.debug and self.logParameterChanges: print(f'{self.transNoExp}Set parameter ' + str(parameter) + ' to ' + str(value))
 
         sysex = sysexSet['parameter'].copy()
         sysex[sysex.index('parameter')] = parameter
@@ -578,7 +585,7 @@ class DSS():
         self.setParameter(parNum, parVal)
 
     def setParameters(self, name):
-        if self.debug: print('T: Set all parameters and assign the name \"' + name + '\"')
+        if self.debug: print(f'{self.trans}Set all parameters and assign the name \"' + name + '\"')
 
         while len(name) < 8:
             name += ' '
@@ -607,7 +614,7 @@ class DSS():
         midi.sendSysex(self.output, sysex)
 
     def saveProgram(self, program):
-        if self.debug: print('T: Save program as program ' + str(program+1))
+        if self.debug: print(f'{self.trans}Save program as program ' + str(program+1))
 
         #Getting the sysex command
         sysex = sysexSet['writeprogram'].copy()

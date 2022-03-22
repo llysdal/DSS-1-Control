@@ -5,18 +5,40 @@ fh = __import__('filehandler')
 t = __import__('tools')
 b = __import__('bridge')
 
+# print('''
+#          ___  __    ___      ___  __  __       _ 
+#   /\ /\ /___\/__\  / _ \    /   \/ _\/ _\     / |
+#  / //_///  // \// / /_\/   / /\ /\ \ \ \ _____| |
+# / __ \/ \_// _  \/ /_\\   / /_// _\ \_\ \_____| |
+# \/  \/\___/\/ \_/\____/  /___,'  \__/\__/     |_|
+                                                 
+# ''')
+print("""
+ .--.   .--.      ,-----.    .-------.      .-_'''-.           ______        .-'''-.    .-'''-.                 ,---.  
+ |  | _/  /     .'  .-,  '.  |  _ _   \    '_( )_   \         |    _ `''.   / _     \  / _     \               /_   |  
+ | (`' ) /     / ,-.|  \ _ \ | ( ' )  |   |(_ o _)|  '        | _ | ) _  \ (`' )/`--' (`' )/`--'                 ,_ |  
+ |(_ ()_)     ;  \  '_ /  | :|(_ o _) /   . (_,_)/___|        |( ''_'  ) |(_ o _).   (_ o _).     _ _    _ _ ,-./  )|  
+ | (_,_)   __ |  _`,/ \ _/  || (_,_).' __ |  |  .-----.       | . (_) `. | (_,_). '.  (_,_). '.  ( ' )--( ' )\  '_ '`) 
+ |  |\ \  |  |: (  '\_/ \   ;|  |\ \  |  |'  \  '-   .'       |(_    ._) '.---.  \  :.---.  \  :(_{;}_)(_{;}_)> (_)  ) 
+ |  | \ `'   / \ `"/  \  ) / |  | \ `'   / \  `-'`   |        |  (_.\.' / \    `-'  |\    `-'  | (_,_)--(_,_)(  .  .-' 
+ |  |  \    /   '. \_/``".'  |  |  \    /   \        /        |       .'   \       /  \       /               `-'`-'|  
+ `--'   `'-'      '-----'    ''-'   `'-'     `'-...-'         '-----'`      `-...-'    `-...-'                  '---'  
+
+""")
+
 #Preinit config
 configPresent, config = fh.getConfig()
 
 #Handle config
-pass
+debug = config.get('debug', None) == 'true'
+logParameterChanges = config.get('logParameterChanges', None) == 'true'
 
 #Chose MIDI input and Output
 devices = midi.getMidiDevices()
 mIn, mOut = t.chooseDevices(devices, config)
 
 #Setup DSS1 communication
-dss = DSS.DSS(mIn, mOut)
+dss = DSS.DSS(mIn, mOut, debug=debug, logParameterChanges=logParameterChanges)
 
 #Get start information
 dss.setPlayMode()
@@ -40,13 +62,13 @@ while True:
     recv, sysex, sysexBuffer = midi.getSysex(dss.input, sysexBuffer)
     if recv:
         if not received:
-            print('A: Communication established!')
+            print('Communication established!')
             received = True
         dss.decodeSysex(sysex)
     else:
         break
 if not received:
-    print('A: Communications failed!')
+    print('E R R O R - Communications failed!')
     input('...')
 
 b.updateControl(dss, gui)

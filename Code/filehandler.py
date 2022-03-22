@@ -14,6 +14,7 @@ def getConfig():
 
         config = {}
         for configuration in dataSplit:
+            if configuration[0] == '#': continue
             splitPoint = configuration.index('=')
             if len(configuration) == splitPoint+1:
                 config[configuration[0:splitPoint]] = None
@@ -22,40 +23,8 @@ def getConfig():
 
         return True, config
     except:
-        print('FH: Config file not found / wrong format')
+        print('Config file not found / wrong format - using defaults')
         return False, {}
-
-# def checkPatch(name):
-#     try:
-#         file = open(curDir+'/Patches/'+name, 'r')
-#         file.close()
-#         return True
-#     except:
-#         print('FH: \'' + name + '\' not found')
-#         return False
-
-# def savePatch(name, data):
-#     file = open(curDir+'/Patches/'+name, 'w')
-
-#     for i in range(len(data)-1):
-#         file.write(str(data[i]) + '\n')
-#     file.write(str(data[len(data)-1]))
-
-#     file.close()
-#     print('FH: Saved ' + name + ' successfully')
-
-# def loadPatch(name):
-#     file = open(curDir+'/Patches/'+name, 'r')
-#     data = file.read()
-#     file.close()
-
-#     dataSplit = data.split('\n')
-#     dataTreated = []
-#     for i in range(len(dataSplit)):
-#         dataTreated.append(int(dataSplit[i]))
-
-#     print('FH: Loaded ' + name + ' successfully')
-#     return dataTreated
 
 
 def loadWav(loc):
@@ -74,7 +43,7 @@ def loadWav(loc):
             data = file.readframes(1)
             waveData.append(struct.unpack('<i', data + (b'\0' if data[2] < 128 else b'\xff'))[0])
     else:
-        print(f'FH: Unsupported bit width ({bitwidth} bits) for {loc}')
+        print(f'Unsupported bit width ({bitwidth} bits) for {loc}, cancelling')
 
     file.close()
 
