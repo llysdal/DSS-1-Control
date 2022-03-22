@@ -55,11 +55,11 @@ class Application():
 
         return slider
 
-    def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1, requestparent = False):
+    def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1, requestparent = False, command = lambda: None):
         string = tk.StringVar(self.frame)
         string.set(start)
 
-        dropdown = tk.OptionMenu(self.frame, string, *values)
+        dropdown = tk.OptionMenu(self.frame, string, *values, command=command)
         dropdown.configure(background = self.black, foreground = self.white, highlightthickness = 0, borderwidth = 2)#, activebackground = self.blue)
         dropdown.grid(column = gridpos[0], row = gridpos[1], columnspan = columnspan, sticky = E+S)
 
@@ -399,10 +399,12 @@ class DSS1multi(Application):
             f.createTitle((0, 0), str(s+1), columnspan = 2)
 
             f.createText((0, 1), 'Top Key')
-            f.topkey = f.createSpinbox((1, 1), values = midiKeys, width = 4)
+            f.topkey = f.createSpinbox((1, 1), values = midiKeys, width = 4, command = lambda s=s: self.topKeyAdjust(s))
+            f.topkey.set('C4')
 
             f.createText((0, 2), 'Orig. Key')
-            f.origkey = f.createSpinbox((1, 2), values = midiKeys, width = 4)
+            f.origkey = f.createSpinbox((1, 2), values = midiKeys, width = 4, command = lambda s=s: self.topKeyAdjust(s))
+            f.origkey.set('C4')
 
             f.createText((0, 3), 'Tune')
             f.tune = f.createSlider((1, 3), (-63, 63), start = 0)
@@ -417,7 +419,7 @@ class DSS1multi(Application):
             f.transpose = f.createCheckbutton((1, 6), '')
 
             f.createText((0, 7), 'Samp. Freq.')
-            f.freq = f.createDropdown((1, 7), ['32kHz', '24kHz', '16kHz', '48kHz'], start = '32kHz')
+            f.freq = f.createDropdown((1, 7), ['16kHz', '24kHz', '32kHz', '48kHz'], start = '32kHz', command = lambda _,s=s: self.topKeyAdjust(s))
 
             f.createText((0, 8), 'Sound Size')
             f.soundwadr = f.createSpinbox((1, 8), from_=1, to=261886, width = 8)
@@ -427,9 +429,9 @@ class DSS1multi(Application):
             f.soundlen = f.createSpinbox((1, 10), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
 
             f.createText((0, 11), 'Loop S. Adr.')
-            f.loopsadr = f.createSpinbox((1, 11), from_=0, to=261885, width = 8)
+            f.loopsadr = f.createSpinbox((1, 11), from_=0, to=261885, width = 8, command = lambda s=s: self.updateSoundAbs(s))
             f.createText((0, 12), 'Loop Length')
-            f.looplen = f.createSpinbox((1, 12), from_=1, to=261886, width = 8)
+            f.looplen = f.createSpinbox((1, 12), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
             
             f.createText((0, 13), 'Abs. Start')
             f.absstart = f.createDynText((1, 13))
@@ -445,6 +447,25 @@ class DSS1multi(Application):
             f.absloopend.set(0)
 
             f.frame.grid_remove()
+
+    def topKeyAdjust(self, s):
+        print(s)
+        f = self.soundframe[s]
+        top = midiKeys.index(f.topkey.get())
+        orig = midiKeys.index(f.origkey.get())
+        
+        if top < orig:
+            f.topkey.set(f.origkey.get())
+            return
+            
+        topcap = orig + {'16kHz':24, '24kHz':17, '32kHz':12, '48kHz':5}[f.freq.get()]
+        if top > topcap:
+            f.topkey.set(midiKeys[topcap])
+            
+        #C4 - F4
+        #C4 - C5
+        #C4 - F5
+        #C4 - C6
 
     def updateSoundAbs(self, s):
         f = self.soundframe[s]
@@ -750,7 +771,7 @@ class DSS1main(Application):
         self.unid.set(values[74])
         self.oscx.set(values[75])
         self.assign.set(('Poly 1', 'Poly 2', 'Unison')[values[76]])
-        self.unia.set((1,2,4,8)[values[77]])
+        self.unia.set((2,4,6,8)[values[77]])
 
     def getValues(self):
         try:
@@ -839,7 +860,7 @@ class DSS1main(Application):
                 self.unid.get(),
                 self.oscx.get(),
                 ('Poly 1', 'Poly 2', 'Unison').index(self.assign.get()),
-                (1,2,4,8).index(int(self.unia.get())))
+                (2,4,6,8).index(int(self.unia.get())))
 
         return data
 
@@ -1221,7 +1242,7 @@ class DSS1main(Application):
         self.createText((o, h+1), 'Assign Mode')
         self.assign = self.createDropdown((o+1, h+1), ['Poly 1', 'Poly 2', 'Unison'], start = 'Poly 1')
         self.createText((o, h+2), 'Uni Voices')
-        self.unia = self.createDropdown((o+1, h+2), [1,2,4,8], start = 4)
+        self.unia = self.createDropdown((o+1, h+2), [2,4,6,8], start = 4)
         self.createText((o, h+3), 'Uni Detune')
         self.unid = self.createSlider((o+1, h+3), [0,7], start = 4)
 

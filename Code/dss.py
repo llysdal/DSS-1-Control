@@ -73,17 +73,17 @@ class DSS():
                         'sounds'        :   1,
                         'maxinterval'   :   0,
                         'checksum'      :   0}
-        self.soundparam = {'topkey'     :   0,
-                           'origkey'    :   0,
-                           'tune'       :   0,
-                           'level'      :   0,
-                           'cutoff'     :   0,
-                           'soundwadr'  :   0,
+        self.soundparam = {'topkey'     :   72,
+                           'origkey'    :   60,
+                           'tune'       :   64,
+                           'level'      :   63,
+                           'cutoff'     :   63,
+                           'soundwadr'  :   1,
                            'soundsadr'  :   0,
-                           'soundlen'   :   0,
+                           'soundlen'   :   1,
                            'loopsadr'   :   0,
-                           'looplen'    :   0,
-                           'transpose'  :   0,
+                           'looplen'    :   1,
+                           'transpose'  :   1,
                            'samplingfreq':  0}
         self.soundparameters = []
         for i in range(16):
@@ -528,7 +528,8 @@ class DSS():
         lengthIndex = sysex.index('length')
         sysex[lengthIndex:lengthIndex+1] = self.lenEncode(length)
         sysex[sysex.index('loopsounds')] = (loop << 6) + soundAmount
-        sysex[sysex.index('maxinterval')] = max([s[0] - s[1] + (0, -7, -12, 5)[s[11]] for s in sounds])
+        maxint = max([s[0] - s[1] + (0, -7, -12, 5)[s[11]] for s in sounds])
+        sysex[sysex.index('maxinterval')] = ~maxint & 0b01111111
         
         soundParamIndex = sysex.index('soundparams')
         sysex[soundParamIndex:soundParamIndex+1] = [v for s in sounds for v in (
