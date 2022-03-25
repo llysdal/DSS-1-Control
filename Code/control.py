@@ -55,7 +55,7 @@ class Application():
 
         return slider
 
-    def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1, requestparent = False, command = lambda: None):
+    def createDropdown(self, gridpos, values = [1,2,3], start = 1, columnspan = 1, requestparent = False, command = lambda s: None):
         string = tk.StringVar(self.frame)
         string.set(start)
 
@@ -249,7 +249,7 @@ class DSS1sample(Application):
         self.master.title('Sample Memory')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
         
-        self.master.minsize(440, 80)
+        self.master.minsize(520, 80)
         
         self.master.resizable(False, False)
         
@@ -260,11 +260,11 @@ class DSS1sample(Application):
 
         self.menu = self.createMenu()
         self.menu.add_command(label='Add Sample', command = self.addsample)
+        self.menu.add_command(label='Save PCM data', command = self.savepcm)
         self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
         self.menu.add_command(label='Save Samplemap', command = lambda: self.execCom('savesamplemap'))
         self.menu.add_command(label='Load Samplemap', command = self.loadsamplemap)
-        self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)
-        self.menu.add_command(label='Save PCM data', command = self.savepcm)
+        self.menu.add_command(label='Set Offset to Free', command = lambda: self.execCom('setsampleoffsettofree'))
  
         self.minSizeY(0, 0)
         self.minSizeX(0, 5)
@@ -455,7 +455,6 @@ class DSS1multi(Application):
             f.frame.grid_remove()
 
     def topKeyAdjust(self, s):
-        print(s)
         f = self.soundframe[s]
         top = midiKeys.index(f.topkey.get())
         orig = midiKeys.index(f.origkey.get())
@@ -505,17 +504,21 @@ class DSS1multi(Application):
         file = filedialog.askopenfile(title='Load Multisound', filetypes=[('Multisound', '.multi')], initialdir=fh.curDir+'/Data/Multisounds', parent=self.master)
 
         if file:
-            data = json.load(file)
-            self.setValues((
-                0,      #prog no
-                data[0],#name
-                sum([s[5] for s in data[3]]),   #length
-                data[1],#loop
-                data[2],#sounds
-                max([s[0] - s[1] + (0, -7, -12, 5)[s[11]] for s in data[3]]),   #max int
-                0,      #checksum
-                data[3] #sounds
-            ))
+            self.loadMultisoundDirect(file)
+            
+    def loadMultisoundDirect(self, file):
+        data = json.load(file)
+        self.setValues((
+            0,      #prog no
+            data[0],#name
+            sum([s[5] for s in data[3]]),   #length
+            data[1],#loop
+            data[2],#sounds
+            max([s[0] - s[1] + (0, -7, -12, 5)[s[11]] for s in data[3]]),   #max int
+            0,      #checksum
+            data[3] #sounds
+        ))
+        file.close()
 
     def setValues(self, values):
         self.no = values[0]
@@ -617,6 +620,8 @@ class DSS1main(Application):
         self.setup()
 
         self.execcommand = 0
+        
+        self.systemData = []
 
         #Workaround
         self.oscrange = 0
@@ -884,11 +889,34 @@ class DSS1main(Application):
         file = filedialog.askopenfile(title='Load Program', filetypes=[('Program', '.pgm')], initialdir=fh.curDir+'/Data/Programs')
 
         if file:
-            data = json.load(file)
-            self.progname.delete(0, 100)
-            self.progname.insert(0, data[0])
-            self.setValues(data[1])
-            file.close()
+            self.loadProgramDirect(file)
+            
+    def loadProgramDirect(self, file):
+        data = json.load(file)
+        self.progname.delete(0, 100)
+        self.progname.insert(0, data[0])
+        self.setValues(data[1])
+        file.close()
+
+    def loadSystem(self):
+        file = filedialog.askopenfile(title='Load System', filetypes=[('System', '.system')], initialdir=fh.curDir+'/Data/Systems')
+        
+        if file:
+            self.systemData = []
+            
+            for line in file.readlines():
+                line = line.strip('\n')
+                tokens = line.split(' ')
+                if tokens[0] == 'pcm':
+                    self.systemData.append(('pcm', tokens[1], int(tokens[2])))
+                elif tokens[0] == 'mlt':
+                    self.systemData.append(('mlt', tokens[1]))
+                elif tokens[0] == 'pgm':
+                    self.systemData.append(('pgm', tokens[1], int(tokens[2])))
+                else:
+                    print('Corrupt system file!')
+            
+            self.execCom('loadsystem')
 
     #Gui setup, this is gonna be long
     #Dont touch anything here please
@@ -918,6 +946,8 @@ class DSS1main(Application):
         systemmenu = tk.Menu(self.menu, tearoff=0)
         systemmenu.add_command(label="Get Mode", command = lambda: self.execCom('getmode'))
         systemmenu.add_command(label="Set Playmode", command = lambda: self.execCom('playmode'))
+        systemmenu.add_separator()
+        systemmenu.add_command(label="Load System", command = self.loadSystem)
         self.menu.add_cascade(label='System', menu=systemmenu)
         
         self.menu.add_command(label="\u22EE", activebackground=self.menu.cget("background"), state=tk.DISABLED)

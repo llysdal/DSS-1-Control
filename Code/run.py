@@ -40,10 +40,7 @@ mIn, mOut = t.chooseDevices(devices, config)
 #Setup DSS1 communication
 dss = DSS.DSS(mIn, mOut, debug=debug, logParameterChanges=logParameterChanges)
 
-#Get start information
-dss.setPlayMode()
-dss.getNameList()
-dss.getMultisoundsList()
+
 
 #Start GUI
 root = GUI.tk.Tk()
@@ -52,8 +49,12 @@ gui = GUI.DSS1main(root,
                   textfont  = ('Lucida Sans', 11),
                   numberfont= ('Lucida Sans', 8))
 
-
+#Get start information
+dss.setPlayMode()
+dss.getNameList() #first sysex not queued to kickstart communications
+dss.queueOperation(lambda s: s.getMultisoundsList())
 b.getParams(dss, gui)
+t.delay(0.1)
 
 #Startup sysex handling (handle all of the queue)
 sysexBuffer = []
@@ -62,13 +63,13 @@ while True:
     recv, sysex, sysexBuffer = midi.getSysex(dss.input, sysexBuffer)
     if recv:
         if not received:
-            print('Communication established!')
+            print('├────── Communication established!')
             received = True
         dss.decodeSysex(sysex)
     else:
         break
 if not received:
-    print('E R R O R - Communications failed!')
+    print('└──//── Communications failed!')
     input('...')
 
 b.updateControl(dss, gui)
@@ -86,20 +87,22 @@ def updateTask(sysexBuffer):
         elif com == 'setparameters':
             b.setParams(dss, gui)
         elif com == 'getprogramlist':
-            dss.getNameList()
+            dss.queueOperation(lambda s: s.getNameList())
         elif com == 'saveprogram':
             b.saveProgram(dss, gui)
         elif com == 'getmode':
-            dss.getMode()
+            dss.queueOperation(lambda s: s.getMode())
         elif com == 'playmode':
             dss.setPlayMode()
-            dss.getMode()
+            dss.queueOperation(lambda s: s.getMode())
         elif com == 'changeprogram':
             b.changeProgram(dss, gui)
         elif com == 'savefile':
             b.saveFile(dss, gui)
         elif com == 'loadfile':
             b.loadFile(dss, gui)
+        elif com == 'loadsystem':
+            b.loadSystem(dss, gui)
         elif com == 'updatecontrol':
             b.updateControl(dss, gui)
         elif com == 'getpcm':
@@ -112,7 +115,7 @@ def updateTask(sysexBuffer):
     com = gui.proglist.execcommand
     if type(com) == str:
         if com == 'getprogramlist':
-            dss.getNameList()
+            dss.queueOperation(lambda s: s.getNameList())
             
         gui.proglist.execCom(0)
 
@@ -126,7 +129,7 @@ def updateTask(sysexBuffer):
         elif com == 'deletemultisound':
             b.deleteMultisound(dss, gui)
         elif com == 'getmultisoundlist':
-            dss.getMultisoundsList()
+            dss.queueOperation(lambda s: s.getMultisoundsList())
 
         gui.mult.execCom(0)
         
@@ -139,13 +142,15 @@ def updateTask(sysexBuffer):
             b.loadSampleMap(dss, gui)
         elif com == 'savesamplemap':
             b.saveSampleMap(dss, gui)
+        elif com == 'setsampleoffsettofree':
+            b.setSampleOffsetToFree(dss, gui)
         
         gui.sample.execCom(0)
 
     com = gui.sample.pcm.execcommand
     if type(com) == str:
         if com == 'fetchsample':
-            dss.getPCM(int(gui.sample.pcm.pcmStart.get()), int(gui.sample.pcm.pcmEnd.get()))
+            b.getPCM(dss, gui)
         
         gui.sample.pcm.execCom(0)
 
@@ -169,6 +174,9 @@ def updateTask(sysexBuffer):
         if values[i] != dss.param[key]['v']:
             dss.param[key]['v'] = values[i]
             dss.setKey(key)
+            
+    #dss queue
+    dss.handleQueue()
 
     gui.frame.after(50, updateTask, sysexBuffer)
 

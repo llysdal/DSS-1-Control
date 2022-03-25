@@ -1,0 +1,17 @@
+pcm \analog\samples\saw.wav 0
+mlt \analog\multisounds\saw.multi
+pcm \analog\samples\square.wav 1020
+mlt \analog\multisounds\square.multi
+pcm \analog\samples\sine.wav 2040
+mlt \analog\multisounds\sine.multi
+pcm \analog\samples\organ.wav 3060
+mlt \analog\multisounds\organ.multi
+pcm \analog\samples\tine.wav 4080
+mlt \analog\multisounds\tine.multi
+pgm \analog\programs\1_sawdream.pgm 1
+pgm \analog\programs\2_ensemble.pgm 2
+pgm \analog\programs\3_vangelis.pgm 3
+pgm \analog\programs\4_leslie.pgm 4
+pgm \analog\programs\5_relax.pgm 5
+pgm \analog\programs\6_saw.pgm 6
+pgm \analog\programs\7_ensemble2.pgm 7

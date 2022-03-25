@@ -4,20 +4,26 @@ midi = __import__('midi')
 fh = __import__('filehandler')
 t = __import__('tools')
 
+import json
+
 
 #GUI functions
 def getParams(dss, gui):
-    dss.getParameters(int(gui.prog.get())-1)
+    prog = int(gui.prog.get())-1
+    dss.queueOperation(lambda s, prog=prog: s.getParameters(prog))
 
 def setParams(dss, gui):
-    dss.setParameters(gui.progname.get())
+    progname = gui.progname.get()
+    dss.queueOperation(lambda s, progname=progname: s.setParameters(progname))
 
 def saveProgram(dss, gui):
-    dss.saveProgram(int(gui.prog.get())-1)
-    dss.getNameList()
+    prog = int(gui.prog.get())-1
+    dss.queueOperation(lambda s, prog=prog: s.saveProgram(prog))
+    dss.queueOperation(lambda s: s.getNameList())
 
 def changeProgram(dss, gui):
-    dss.programChange(int(gui.prog.get())-1)
+    prog = int(gui.prog.get())-1
+    dss.programChange(prog)
 
     if gui.autoget.get():
         getParams(dss, gui)
@@ -30,7 +36,52 @@ def loadFile(dss, gui):
     name = gui.progname.get()
     if fh.checkPatch(name):
         dss.putParameters(fh.loadPatch(name))
-        dss.setParameters(name)
+        dss.queueOperation(lambda s, name=name: s.setParameters(name))
+
+def loadSystem(dss, gui):
+    systemData = gui.systemData
+    
+    multisoundNumber = 0
+    
+    for operation in systemData:
+        if operation[0] == 'pcm':
+            sampleLocation = fh.curDir + '\\Data\\Systems' + operation[1]
+            sampleOffset = operation[2]
+                
+            sampleName = sampleLocation.split('\\')[-1]
+            
+            wave = fh.loadWavNormalize(sampleLocation)
+            length = len(wave)
+            
+            dss.addSample(sampleName, sampleOffset, length)
+            dss.queueOperation(lambda s, wave=wave, start=sampleOffset: s.setPCM(wave, start))
+        elif operation[0] == 'mlt':
+            file = open(fh.curDir + '\\Data\\Systems' + operation[1], 'r')
+            gui.mult.loadMultisoundDirect(file)
+            
+            msn = gui.mult.getValues()
+            dss.queueOperation(lambda s, prog=multisoundNumber, msn=msn: s.setMultisound(prog, msn))
+            #this could be optimized
+            dss.queueOperation(lambda s, prog=multisoundNumber, msn=msn: s.setMultisoundsListAfterMultisoundSet(prog, msn))
+            multisoundNumber += 1
+        elif operation[0] == 'pgm':
+            file = open(fh.curDir + '\\Data\\Systems' + operation[1], 'r')
+            gui.loadProgramDirect(file)
+            
+            values = gui.getValues()
+            paramList = {}
+            for i, key in enumerate(dss.param.keys()):
+                paramList[key] = values[i]
+            
+            progname = gui.progname.get()
+            prog = operation[2]-1
+            dss.queueOperation(lambda s, progname=progname, paramList=paramList: s.setParameters(progname, param=paramList))
+            dss.queueOperation(lambda s, prog=prog: s.saveProgram(prog))
+    
+    dss.queueOperation(lambda s: s.getMultisoundsList())
+    dss.queueOperation(lambda s: s.getNameList())
+    prog = int(gui.prog.get())-1
+    dss.queueOperation(lambda s, prog=prog: s.getParameters(prog))
 
 
 def updateControl(dss, gui):
@@ -93,44 +144,44 @@ def updateControl(dss, gui):
 def getMultisound(dss, gui):
     try:
         msn = gui.mult.multisound.curselection()[0]
-        dss.getMultisound(msn)
+        dss.queueOperation(lambda s, msn=msn: s.getMultisound(msn))
     except:
         print('A: No multisound selected')
 
 def setMultisound(dss, gui):
-    progno = gui.mult.multisound.curselection()
+    prog = gui.mult.multisound.curselection()
     
-    if len(progno) < 1: 
+    if len(prog) < 1: 
         print('A: No multisound slot selected')
         return
-    progno = progno[0]
+    prog = prog[0]
     
-    if progno >= dss.multiAmount: progno = dss.multiAmount
+    if prog >= dss.multiAmount: prog = dss.multiAmount
     
     msn = gui.mult.getValues()
-    dss.setMultisound(progno, msn)
-    dss.setMultisoundsListAfterMultisoundSet(progno, msn)
-    dss.getMultisoundsList()
+    dss.queueOperation(lambda s, prog=prog, msn=msn: s.setMultisound(prog, msn))
+    dss.queueOperation(lambda s, prog=prog, msn=msn: s.setMultisoundsListAfterMultisoundSet(prog, msn))
+    dss.queueOperation(lambda s: s.getMultisoundsList())
     getMultisound(dss, gui)
 
 def deleteMultisound(dss, gui):
-    progno = gui.mult.multisound.curselection()
+    prog = gui.mult.multisound.curselection()
     
-    if len(progno) < 1: 
+    if len(prog) < 1: 
         print('A: No multisound slot selected')
         return
-    progno = progno[0]
+    prog = prog[0]
     
-    if progno >= dss.multiAmount: 
+    if prog >= dss.multiAmount: 
         print('A: Can\'t delete empty multisound')
         return
     
-    if progno != dss.multiAmount-1:
+    if prog != dss.multiAmount-1:
         print("A: Can only delete last multisound for now :(")
         return
 
-    dss.deleteMultisound(progno)
-    dss.getMultisoundsList()
+    dss.queueOperation(lambda s, prog=prog: s.deleteMultisound(prog))
+    dss.queueOperation(lambda s: s.getMultisoundsList())
 
 def addSample(dss, gui):
     sampleLocation = gui.sample.sampleLocation
@@ -144,7 +195,7 @@ def addSample(dss, gui):
     gui.sample.addOffset(length)
     
     dss.addSample(sampleName, start, length)
-    dss.setPCM(wave, start)
+    dss.queueOperation(lambda s, wave=wave, start=start: s.setPCM(wave, start))
     
     dss.updateGUI = True
 
@@ -156,3 +207,11 @@ def loadSampleMap(dss, gui):
 def saveSampleMap(dss, gui):
     gui.sample.savesamplemap(dss.samples)
     
+def setSampleOffsetToFree(dss, gui):
+    gui.sample.sampleOffset.set(dss.getSampleMemoryFreeLoc())
+    dss.updateGUI = True
+    
+def getPCM(dss, gui):
+    start = int(gui.sample.pcm.pcmStart.get())
+    end = int(gui.sample.pcm.pcmEnd.get())
+    dss.queueOperation(lambda s, start=start, end=end: s.getPCM(start, end))

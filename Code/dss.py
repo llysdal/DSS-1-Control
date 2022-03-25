@@ -33,11 +33,16 @@ class DSS():
         self.emitPCM = False
         self.debug = debug
         self.logParameterChanges = logParameterChanges
-        self.trans =        '┌─T   '
-        self.transNoExp =   '  T   '
+        self.trans =        '┌─T  '
+        self.transNoExp =   '  T  '
         self.alrt =         '└──//── '
         self.info =         '├────── '
-        self.recv =         '└──R  '
+        self.recv =         '└──R '
+        self.linebreakRecv = True
+        
+        self.operationQueue = []
+        self.runningOperation = False
+        self.receivedResponse = False
         
         #Assume she's in playmode
         self.mode = 0
@@ -175,6 +180,20 @@ class DSS():
                       'assign'          :   {'l': 0, 'h':   2, 'v':   1},   #poly2, poly1, unison
                       'unisonvoices'    :   {'l': 0, 'h':   3, 'v':   3}}   #amount of unison voices
 
+    def queueOperation(self, func):
+        self.operationQueue.append(func)
+        
+    def handleQueue(self):
+        if self.receivedResponse or not self.runningOperation:
+            self.receivedResponse = False
+            self.runningOperation = False
+            
+            if len(self.operationQueue) > 0:
+                func = self.operationQueue.pop(0)
+                func(self)
+                self.runningOperation = True
+            
+
     def lenDecode(self, sysex):
         #stupid data coming from DSS1 (Service manual page 6 [4](1))
         lenSum =  min(sysex[1], 1)
@@ -230,6 +249,8 @@ class DSS():
     def decodeSysex(self, sysex):
         #Check if the sysex message is for us.
         if sysex[0:4] == [EST, korgID, formID, dssID]:
+            self.receivedResponse = True
+            
             #Mode Data
             if sysex[4] == 0x42:
                 if self.debug: print(f'{self.recv}Mode data')
@@ -378,6 +399,9 @@ class DSS():
             elif sysex[4] == 0x22:
                 if self.debug: print(f'{self.recv}Write error')
                 pass
+            
+            if self.debug and self.linebreakRecv:
+                print()
 
 
     def getMode(self):
@@ -584,15 +608,18 @@ class DSS():
 
         self.setParameter(parNum, parVal)
 
-    def setParameters(self, name):
+    def setParameters(self, name, param='self'):
         if self.debug: print(f'{self.trans}Set all parameters and assign the name \"' + name + '\"')
 
         while len(name) < 8:
             name += ' '
         nameList = list(map(ord, name[0:8]))
-
-        #Get all parameter values
-        parameterList = [par['v'] for par in self.param.values()]
+        
+        if param == 'self':
+            param = self.param
+            parameterList = [par['v'] for par in param.values()]
+        else:
+            parameterList = [par for par in param.values()]
 
         #Treat the 2 delay times (address 46 and 52)
         dh, dl = parameterList[46]//128, parameterList[46]%128
