@@ -387,7 +387,7 @@ class DSS():
 
             #Data Load Error
             elif sysex[4] == 0x24:
-                if self.debug: print(f'{self.recv}Data load error')
+                if self.debug: print(f'{self.alrt}Data load error')
                 pass
 
             #Write Completed
@@ -397,7 +397,7 @@ class DSS():
 
             #Write Error
             elif sysex[4] == 0x22:
-                if self.debug: print(f'{self.recv}Write error')
+                if self.debug: print(f'{self.alrt}Write error')
                 pass
             
             if self.debug and self.linebreakRecv:
@@ -483,6 +483,7 @@ class DSS():
 
     def getMultisoundsList(self):
         if self.debug: print(f'{self.trans}Request multisound list')
+        
 
         midi.sendSysex(self.output, sysexGet['multisoundlist'])
         
@@ -500,7 +501,9 @@ class DSS():
         self.setMultisoundsList()
         
     def setMultisoundsList(self):
-        if self.debug: print(f'{self.trans}Setting multisound list')
+        if self.debug:
+            print(f'{self.trans}Setting multisound list')
+            print(f'{self.info}Load error okay')
 
         sysex = sysexSet['multisoundlist'].copy()
         

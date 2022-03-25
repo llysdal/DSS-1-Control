@@ -122,9 +122,17 @@ def updateControl(dss, gui):
     # gui.osc2w.set(gui.oscms[osc2])
 
     #Multisound list - multisound window
-    gui.mult.multisound.delete(0, 100)
-    for i, name in enumerate(dss.multiName):
-        gui.mult.multisound.insert(i, name)
+    sel = gui.mult.multisound.curselection()
+    if sel:    
+        gui.mult.multisound.delete(0, 100)
+        for i, name in enumerate(dss.multiName):
+            gui.mult.multisound.insert(i, name)
+        gui.mult.multisound.selection_set(sel[0])
+        gui.mult.multisound.activate(sel[0])
+    else:
+        gui.mult.multisound.delete(0, 100)
+        for i, name in enumerate(dss.multiName):
+            gui.mult.multisound.insert(i, name)
 
     #Multisound lengths
     gui.mult.multiLen = dss.multiLen
