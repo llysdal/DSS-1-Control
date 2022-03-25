@@ -433,7 +433,7 @@ class DSS():
             return
 
         est = self.pcmEstimate(end-start)
-        print(f'{self.info}PCM estimated time is {0:.1f}s'.format(est))
+        print(f'{self.info}PCM estimated time is {est:.1f}s')
         if est > self.pcmMaxTime:
             print(f'{self.alrt}PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
             return

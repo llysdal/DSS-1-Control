@@ -149,7 +149,7 @@ class DSS1pcm(Application):
             
     def saveData(self, data):
         if not self.filename: 
-            print('E R R O R - No file selected for saving PCM data!')
+            print('No file selected for saving PCM data!')
             return
         
         file = wave.open(self.filename, 'w')
@@ -165,7 +165,7 @@ class DSS1pcm(Application):
             print(f'Done writing {self.filename.split("/")[-1]}!')
             self.filename = None
         else:
-            print('E R R O R - Failed to open file for writing')
+            print('Failed to open file for writing')
         
     def pcmEndAdjust(self):
         self.pcmEnd.config(from_ = self.pcmStart.get())

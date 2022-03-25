@@ -146,13 +146,13 @@ def getMultisound(dss, gui):
         msn = gui.mult.multisound.curselection()[0]
         dss.queueOperation(lambda s, msn=msn: s.getMultisound(msn))
     except:
-        print('A: No multisound selected')
+        print('No multisound selected!')
 
 def setMultisound(dss, gui):
     prog = gui.mult.multisound.curselection()
     
     if len(prog) < 1: 
-        print('A: No multisound slot selected')
+        print('No multisound slot selected!')
         return
     prog = prog[0]
     
@@ -168,16 +168,16 @@ def deleteMultisound(dss, gui):
     prog = gui.mult.multisound.curselection()
     
     if len(prog) < 1: 
-        print('A: No multisound slot selected')
+        print('No multisound slot selected!')
         return
     prog = prog[0]
     
     if prog >= dss.multiAmount: 
-        print('A: Can\'t delete empty multisound')
+        print('Can\'t delete empty multisound!')
         return
     
     if prog != dss.multiAmount-1:
-        print("A: Can only delete last multisound for now :(")
+        print("Can only delete last multisound for now :(")
         return
 
     dss.queueOperation(lambda s, prog=prog: s.deleteMultisound(prog))
