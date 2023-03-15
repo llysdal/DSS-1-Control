@@ -1,5 +1,6 @@
 midi = __import__('midi')
 t = __import__('tools')
+from time import time
 
 channel = 0
 
@@ -43,6 +44,9 @@ class DSS():
         self.operationQueue = []
         self.runningOperation = False
         self.receivedResponse = False
+
+        self.pcmIsTransmitting = False
+        self.pcmTransmitStartTime = 0
         
         #Assume she's in playmode
         self.mode = 0
@@ -244,7 +248,7 @@ class DSS():
 
     def pcmEstimate(self, length):
         #Sysex delay times half the pcm length
-        return 0.002 * (length/2)
+        return 0.0014 * (length/2)
 
     def decodeSysex(self, sysex):
         #Check if the sysex message is for us.
@@ -382,7 +386,10 @@ class DSS():
 
             #Data Load Completed
             elif sysex[4] == 0x23:
-                if self.debug: print(f'{self.recv}Data load complete')
+                if self.debug and self.pcmIsTransmitting:
+                    self.pcmIsTransmitting = False
+                    print(f'{self.recv}Data load complete ({time() - self.pcmTransmitStartTime:.1f}s)')
+                elif self.debug: print(f'{self.recv}Data load complete')
                 pass
 
             #Data Load Error
@@ -458,10 +465,13 @@ class DSS():
             return
 
         est = self.pcmEstimate(end-start)
-        print(f'{self.info}PCM estimated time is {0:.1f}s'.format(est))
+        print(f'{self.info}PCM estimated time is {est:.1f}s')
         if est > self.pcmMaxTime:
-            print(f'{self.alrt}PCM estimate over max time of ' + str(self.pcmMaxTime) + 's, cancelling')
+            print(f'{self.alrt}PCM estimate over max time of {self.pcmMaxTime}s, cancelling')
             return
+
+        self.pcmIsTransmitting = True
+        self.pcmTransmitStartTime = time()
 
         sysex = sysexSet['pcmdata'].copy()
         startIndex = sysex.index('start')

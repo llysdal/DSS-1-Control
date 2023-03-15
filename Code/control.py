@@ -140,7 +140,7 @@ class DSS1pcm(Application):
         
     def pcmEstimate(self, length):
         #Sysex delay times half the pcm length
-        return 0.002 * (length/2)
+        return 0.0014 * (length/2)
         
     def fetch(self):
         self.filename = filedialog.asksaveasfilename(title='Save PCM sample', filetypes=[('PCM', '.wav')], defaultextension='.wav', initialdir=fh.curDir+'/Data/Samples', parent=self.master)
@@ -615,9 +615,9 @@ class DSS1proglist(Application):
 
 
 class DSS1main(Application):
-    def __init__(self, master, titlefont, textfont, numberfont):
+    def __init__(self, master, titlefont, textfont, numberfont, animegirl = None):
         self.init(master, titlefont, textfont, numberfont)
-        self.setup()
+        self.setup(animegirl)
 
         self.execcommand = 0
         
@@ -920,7 +920,7 @@ class DSS1main(Application):
 
     #Gui setup, this is gonna be long
     #Dont touch anything here please
-    def setup(self):
+    def setup(self, animegirl):
         self.master.title('Korg DSS-1 Main Control')
         self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
         
@@ -1178,6 +1178,15 @@ class DSS1main(Application):
     #MOD Section
         o = 4
         h = 17
+
+    #ANIME GIRL
+        if animegirl is not None:
+            pass # not implemented
+            # self.animegirl = tk.Label(self.frame, justify = 'left')
+            # self.animegirlImage = tk.PhotoImage()
+            # self.animegirlImage['file'] = './Ressource/anime/fl-studio.gif'
+            # self.animegirl.configure(background = self.animegirlImage)
+            # self.animegirl.grid(column = o-3, row = h, columnspan = 2, rowspan=5, sticky = W+N)
 
     #MG
         self.createTitle((o, h), 'Osc MG', columnspan = 2)

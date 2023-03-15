@@ -47,7 +47,8 @@ root = GUI.tk.Tk()
 gui = GUI.DSS1main(root,
                   titlefont = ('Microgramma D Extended', 16),
                   textfont  = ('Lucida Sans', 11),
-                  numberfont= ('Lucida Sans', 8))
+                  numberfont= ('Lucida Sans', 8),
+                  animegirl = 'fl-studio')
 
 #Get start information
 dss.setPlayMode()
@@ -70,7 +71,6 @@ while True:
         break
 if not received:
     print('└──//── Communications failed!')
-    input('...')
 
 b.updateControl(dss, gui)
 
