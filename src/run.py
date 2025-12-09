@@ -32,13 +32,14 @@ configPresent, config = fh.getConfig()
 #Handle config
 debug = config.get('debug', None) == 'true'
 logParameterChanges = config.get('logParameterChanges', None) == 'true'
+keepMultiLen = config.get('keepMultiLen', None) == 'true'
 
 #Chose MIDI input and Output
 devices = midi.getMidiDevices()
 mIn, mOut = t.chooseDevices(devices, config)
 
 #Setup DSS1 communication
-dss = DSS.DSS(mIn, mOut, debug=debug, logParameterChanges=logParameterChanges)
+dss = DSS.DSS(mIn, mOut, debug=debug, logParameterChanges=logParameterChanges, keepMultiLen=keepMultiLen)
 
 
 
@@ -48,7 +49,8 @@ gui = GUI.DSS1main(root, dss,
                   titlefont = ('Microgramma D Extended', 16),
                   textfont  = ('Lucida Sans', 11),
                   numberfont= ('Lucida Sans', 8),
-                  animegirl = 'fl-studio')
+                  animegirl = 'fl-studio',
+                  keepMultiLen = keepMultiLen)
 
 #Get start information
 dss.setPlayMode()

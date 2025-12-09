@@ -319,13 +319,14 @@ class DSS1sample(Application):
         
 
 class DSS1multi(Application):
-    def __init__(self, master, titlefont, textfont, numberfont):
+    def __init__(self, master, titlefont, textfont, numberfont, keepMultiLen = False):
         self.init(master, titlefont, textfont, numberfont)
         self.setup()
         
         self.no = 0
         self.multiLen = []
         self.samples = []
+        self.keepMultiLen = keepMultiLen
         
         self.execcommand = 0
 
@@ -515,10 +516,12 @@ class DSS1multi(Application):
         f = self.soundframe[s]
         
         offset = sum(self.multiLen[:self.no])
-        print(offset)
         relstart = sample[1] - offset
         
-        f.soundwadr.set(sample[2])
+        if self.keepMultiLen:
+            f.soundwadr.set(sample[2])
+        else:
+            f.soundwadr.set(0)
         f.soundsadr.set(relstart)
         f.soundlen.set(sample[2])
         f.loopsadr.set(relstart)
@@ -648,10 +651,10 @@ class DSS1proglist(Application):
 
 
 class DSS1main(Application):
-    def __init__(self, master, dss, titlefont, textfont, numberfont, animegirl = None):
+    def __init__(self, master, dss, titlefont, textfont, numberfont, animegirl = None, keepMultiLen = False):
         self.dss = dss
         self.init(master, titlefont, textfont, numberfont)
-        self.setup(animegirl)
+        self.setup(animegirl, keepMultiLen)
 
         self.execcommand = 0
         
@@ -983,7 +986,7 @@ class DSS1main(Application):
 
     #Gui setup, this is gonna be long
     #Dont touch anything here please
-    def setup(self, animegirl):
+    def setup(self, animegirl, keepMultiLen):
         self.master.title('Korg DSS-1 Main Control')
         self.master.iconbitmap(fh.getAssetsPath('dss.ico'))
         
@@ -995,7 +998,7 @@ class DSS1main(Application):
         self.proglistWindow.protocol("WM_DELETE_WINDOW", lambda: self.proglistWindow.withdraw())
 
         self.multWindow = tk.Toplevel(self.master)
-        self.mult = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont)
+        self.mult = DSS1multi(self.multWindow, self.titlefont, self.textfont, self.numberfont, keepMultiLen)
         self.multWindow.withdraw()
         self.multWindow.protocol("WM_DELETE_WINDOW", lambda: self.multWindow.withdraw())
         

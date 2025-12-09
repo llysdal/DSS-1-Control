@@ -26,7 +26,7 @@ sysexSet = {'playmode'      : [EST, korgID, formID, dssID, 0x13, EOX],
             'pcmdata'       : [EST, korgID, formID, dssID, 0x43, 'start', 'end', 'data', 'checksum', EOX]}
 
 class DSS():
-    def __init__(self, inputID, outputID, debug=False, logParameterChanges=False):
+    def __init__(self, inputID, outputID, debug=False, logParameterChanges=False, keepMultiLen=False):
         self.input  = midi.getMidiInputDevice(inputID)
         self.output = midi.getMidiOutputDevice(outputID)
 
@@ -80,6 +80,7 @@ class DSS():
         self.multiAmount = 0
         self.multiName = []
         self.multiLen = []
+        self.keepMultiLen = keepMultiLen
 
         #Multisound parameters
         self.msparam = {'number'        :   0,
@@ -272,7 +273,10 @@ class DSS():
 
                 for i in range(self.multiAmount):
                     self.multiName.append(''.join(map(chr, sysex[6+14*i:6+14*i+8])).strip())
-                    self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
+                    if self.keepMultiLen:
+                        self.multiLen.append(self.lenDecode(sysex[6+14*i+8:6+14*i+14]))
+                    else:
+                        self.multiLen.append(0)
                     
                 while len(self.multiName) < 16:
                     self.multiName.append(f'EMPTY {len(self.multiName)+1:02d}')
@@ -512,7 +516,10 @@ class DSS():
         if progno == self.multiAmount:
             self.multiAmount += 1
         self.multiName[progno] = name
-        self.multiLen[progno] = length
+        if self.keepMultiLen:
+            self.multiLen[progno] = length
+        else:
+            self.multiLen[progno] = 0
             
         self.setMultisoundsList()
         
