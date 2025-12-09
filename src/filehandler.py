@@ -1,8 +1,8 @@
 import os, wave, struct
 curDir = os.path.dirname(os.path.abspath(__file__))[0:-4]
 
-def getRessourcePath(name):
-    return curDir+'/Ressource/' + name
+def getAssetsPath(name):
+    return curDir+'/assets/' + name
 
 def getConfig():
     try:

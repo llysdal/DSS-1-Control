@@ -82,7 +82,7 @@ def loadSystem(dss, gui):
     dss.queueOperation(lambda s: s.getNameList())
     prog = int(gui.prog.get())-1
     dss.queueOperation(lambda s, prog=prog: s.getParameters(prog))
-
+    
 
 def updateControl(dss, gui):
     #Program list
@@ -140,6 +140,9 @@ def updateControl(dss, gui):
     #Multisound values
     multParList = dss.extractMultisoundParameters()
     gui.mult.setValues(multParList)
+    
+    #Multisound sample list
+    gui.mult.loadSamples(dss.samples)
     
     #Program list - program list window
     gui.proglist.programs.delete(0, 1000)

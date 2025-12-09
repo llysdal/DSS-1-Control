@@ -143,7 +143,7 @@ class DSS1pcm(Application):
         return 0.0014 * (length/2)
         
     def fetch(self):
-        self.filename = filedialog.asksaveasfilename(title='Save PCM sample', filetypes=[('PCM', '.wav')], defaultextension='.wav', initialdir=fh.curDir+'/Data/Samples', parent=self.master)
+        self.filename = filedialog.asksaveasfilename(title='Save PCM sample', filetypes=[('PCM', '.wav')], defaultextension='.wav', initialdir=fh.curDir+'/data/samples', parent=self.master)
         
         self.execCom('fetchsample')
             
@@ -178,7 +178,7 @@ class DSS1pcm(Application):
         
     def setup(self):
         self.master.title('Save PCM')
-        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        self.master.iconbitmap(fh.getAssetsPath('dss.ico'))
         
         self.master.minsize(200, 100)
         
@@ -217,19 +217,19 @@ class DSS1sample(Application):
         self.execcommand = val
     
     def addsample(self):
-        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/Data/Samples', parent=self.master)
+        self.sampleLocation = filedialog.askopenfilename(title='Add Sample', filetypes=[('wave', '.wav')], initialdir=fh.curDir+'/data/samples', parent=self.master)
         if self.sampleLocation:
             self.execCom('addsample')
         
     def savesamplemap(self, samplemap):
-        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/Data/SampleMaps', parent=self.master)
+        file = filedialog.asksaveasfile(title='Save Samplemap', filetypes=[('Samplemap', '.pcmmap')], defaultextension='.pcmmap', initialdir=fh.curDir+'/data/sample_maps', parent=self.master)
         if file:
             for s in samplemap:
                 file.write(f'{s[0]}!{s[1]}!{s[2]}\n')
             file.close()
         
     def loadsamplemap(self):
-        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/Data/SampleMaps', parent=self.master)
+        file = filedialog.askopenfile(title='Load Samplemap', filetypes=[('Samplemap', '.pcmmap')], initialdir=fh.curDir+'/data/sample_maps', parent=self.master)
 
         if file:
             self.loadedSampleMap = []
@@ -247,7 +247,7 @@ class DSS1sample(Application):
         
     def setup(self):
         self.master.title('Sample Memory')
-        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        self.master.iconbitmap(fh.getAssetsPath('dss.ico'))
         
         self.master.minsize(520, 80)
         
@@ -325,7 +325,8 @@ class DSS1multi(Application):
         
         self.no = 0
         self.multiLen = []
-
+        self.samples = []
+        
         self.execcommand = 0
 
     def execCom(self, val):
@@ -333,7 +334,7 @@ class DSS1multi(Application):
 
     def setup(self):
         self.master.title('Multisound Control')
-        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        self.master.iconbitmap(fh.getAssetsPath('dss.ico'))
         
         self.master.resizable(False, False)
 
@@ -427,30 +428,37 @@ class DSS1multi(Application):
             f.createText((0, 7), 'Samp. Freq.')
             f.freq = f.createDropdown((1, 7), ['16kHz', '24kHz', '32kHz', '48kHz'], start = '32kHz', command = lambda _,s=s: self.topKeyAdjust(s))
 
-            f.createText((0, 8), 'Sound Size')
-            f.soundwadr = f.createSpinbox((1, 8), from_=1, to=261886, width = 8)
-            f.createText((0, 9), 'Start Adr.')
-            f.soundsadr = f.createSpinbox((1, 9), from_=0, to=261885, width = 8, command = lambda s=s: self.updateSoundAbs(s))
-            f.createText((0, 10), 'Length')
-            f.soundlen = f.createSpinbox((1, 10), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
+            f.createText((0, 8), 'Sample')
+            f.sample, f.sampleo = f.createDropdown((1, 8), ['Load...'], start = "Load...", requestparent = True)
 
-            f.createText((0, 11), 'Loop S. Adr.')
-            f.loopsadr = f.createSpinbox((1, 11), from_=0, to=261885, width = 8, command = lambda s=s: self.updateSoundAbs(s))
-            f.createText((0, 12), 'Loop Length')
-            f.looplen = f.createSpinbox((1, 12), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
+            p = 9
+            f.createText((0, p), 'Sound Size')
+            f.soundwadr = f.createSpinbox((1, p), from_=1, to=261886, width = 8)
+            f.createText((0, p+1), 'Start Adr.')
+            f.soundsadr = f.createSpinbox((1, p+1), from_=0, to=261885, width = 8, command = lambda s=s: self.updateSoundAbs(s))
+            f.createText((0, p+2), 'Length')
+            f.soundlen = f.createSpinbox((1, p+2), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
+
+            f.createText((0, p+3), 'Loop S. Adr.')
+            f.loopsadr = f.createSpinbox((1, p+3), from_=0, to=261885, width = 8, command = lambda s=s: self.updateSoundAbs(s))
+            f.createText((0, p+4), 'Loop Length')
+            f.looplen = f.createSpinbox((1, p+4), from_=1, to=261886, width = 8, command = lambda s=s: self.updateSoundAbs(s))
             
-            f.createText((0, 13), 'Abs. Start')
-            f.absstart = f.createDynText((1, 13))
+            f.createText((0, p+5), 'Abs. Start')
+            f.absstart = f.createDynText((1, p+5))
             f.absstart.set(0)
-            f.createText((0, 14), 'Abs. End')
-            f.absend = f.createDynText((1, 14))
+            f.createText((0, p+6), 'Abs. End')
+            f.absend = f.createDynText((1, p+6))
             f.absend.set(0)
-            f.createText((0, 15), 'Abs. Loop Start')
-            f.absloopstart = f.createDynText((1, 15))
+            f.createText((0, p+7), 'Abs. Loop Start')
+            f.absloopstart = f.createDynText((1, p+7))
             f.absloopstart.set(0)
-            f.createText((0, 16), 'Abs. Loop End')
-            f.absloopend = f.createDynText((1, 16))
+            f.createText((0, p+8), 'Abs. Loop End')
+            f.absloopend = f.createDynText((1, p+8))
             f.absloopend.set(0)
+            # f.createText((0, 17), 'Sound Size')
+            # f.absloopend = f.createDynText((1, 17))
+            # f.absloopend.set(0)
 
             f.frame.grid_remove()
 
@@ -494,14 +502,38 @@ class DSS1multi(Application):
         for s in range(int(self.sounds.get())):
             self.soundframe[s].frame.grid()
 
+    def loadSamples(self, samples):
+        self.samples = samples
+        for s in range(16):
+            m = self.soundframe[s].sampleo.children['menu']
+            m.delete(0,16)
+            for sample in self.samples:
+                if (sample[1] >= sum(self.multiLen[:self.no])):
+                    m.add_command(label=sample[0], command=lambda s=s ,sample=sample: self.loadMultisoundSample(s, sample))
+
+    def loadMultisoundSample(self, s, sample):
+        f = self.soundframe[s]
+        
+        offset = sum(self.multiLen[:self.no])
+        print(offset)
+        relstart = sample[1] - offset
+        
+        f.soundwadr.set(sample[2])
+        f.soundsadr.set(relstart)
+        f.soundlen.set(sample[2])
+        f.loopsadr.set(relstart)
+        f.looplen.set(sample[2])
+        
+        self.updateSoundAbs(s)
+
     def saveMultisound(self):
-        file = filedialog.asksaveasfile(title='Save Multisound', filetypes=[('Multisound', '.multi')], defaultextension='.multi', initialdir=fh.curDir+'/Data/Multisounds', parent=self.master)
+        file = filedialog.asksaveasfile(title='Save Multisound', filetypes=[('Multisound', '.multi')], defaultextension='.multi', initialdir=fh.curDir+'/data/multisounds', parent=self.master)
         if file:
             json.dump(self.getValues(), file)
             file.close()
         
     def loadMultisound(self):
-        file = filedialog.askopenfile(title='Load Multisound', filetypes=[('Multisound', '.multi')], initialdir=fh.curDir+'/Data/Multisounds', parent=self.master)
+        file = filedialog.askopenfile(title='Load Multisound', filetypes=[('Multisound', '.multi')], initialdir=fh.curDir+'/data/multisounds', parent=self.master)
 
         if file:
             self.loadMultisoundDirect(file)
@@ -561,6 +593,7 @@ class DSS1multi(Application):
           s.level.get(),
           s.cutoff.get(),
           int(s.soundwadr.get()),
+        #   int(s.soundlen.get()),
           int(s.soundsadr.get()),
           int(s.soundlen.get()),
           int(s.loopsadr.get()) + int(s.soundsadr.get()),
@@ -590,7 +623,7 @@ class DSS1proglist(Application):
 
     def setup(self):
         self.master.title('Program List')
-        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        self.master.iconbitmap(fh.getAssetsPath('dss.ico'))
         
         self.master.minsize(300, 80)
         
@@ -906,7 +939,7 @@ class DSS1main(Application):
         return data
 
     def saveProgram(self):
-        file = filedialog.asksaveasfile(title='Save Program', filetypes=[('Program', '.pgm')], defaultextension='.pgm', initialdir=fh.curDir+'/Data/Programs')
+        file = filedialog.asksaveasfile(title='Save Program', filetypes=[('Program', '.pgm')], defaultextension='.pgm', initialdir=fh.curDir+'/data/programs')
         if file:
             data = [
                 self.progname.get(),
@@ -916,7 +949,7 @@ class DSS1main(Application):
             file.close()
         
     def loadProgram(self):
-        file = filedialog.askopenfile(title='Load Program', filetypes=[('Program', '.pgm')], initialdir=fh.curDir+'/Data/Programs')
+        file = filedialog.askopenfile(title='Load Program', filetypes=[('Program', '.pgm')], initialdir=fh.curDir+'/data/programs')
 
         if file:
             self.loadProgramDirect(file)
@@ -929,7 +962,7 @@ class DSS1main(Application):
         file.close()
 
     def loadSystem(self):
-        file = filedialog.askopenfile(title='Load System', filetypes=[('System', '.system')], initialdir=fh.curDir+'/Data/Systems')
+        file = filedialog.askopenfile(title='Load System', filetypes=[('System', '.system')], initialdir=fh.curDir+'/data/systems')
         
         if file:
             self.systemData = []
@@ -952,7 +985,7 @@ class DSS1main(Application):
     #Dont touch anything here please
     def setup(self, animegirl):
         self.master.title('Korg DSS-1 Main Control')
-        self.master.iconbitmap(fh.getRessourcePath('dss.ico'))
+        self.master.iconbitmap(fh.getAssetsPath('dss.ico'))
         
         self.master.resizable(False, False)
         
@@ -1021,7 +1054,7 @@ class DSS1main(Application):
 
 
         #Background
-        backimage = tk.PhotoImage(file = fh.getRessourcePath('background.png'))
+        backimage = tk.PhotoImage(file = fh.getAssetsPath('background.png'))
         backlabel = tk.Label(self.frame, image=backimage, bd = 0)
         backlabel.place(x=0, y=0)
         backlabel.image = backimage
