@@ -44,7 +44,7 @@ dss = DSS.DSS(mIn, mOut, debug=debug, logParameterChanges=logParameterChanges)
 
 #Start GUI
 root = GUI.tk.Tk()
-gui = GUI.DSS1main(root,
+gui = GUI.DSS1main(root, dss,
                   titlefont = ('Microgramma D Extended', 16),
                   textfont  = ('Lucida Sans', 11),
                   numberfont= ('Lucida Sans', 8),
@@ -55,7 +55,7 @@ dss.setPlayMode()
 dss.getNameList() #first sysex not queued to kickstart communications
 dss.queueOperation(lambda s: s.getMultisoundsList())
 b.getParams(dss, gui)
-t.delay(0.1)
+t.delay(0.2)
 
 #Startup sysex handling (handle all of the queue)
 sysexBuffer = []

@@ -615,7 +615,8 @@ class DSS1proglist(Application):
 
 
 class DSS1main(Application):
-    def __init__(self, master, titlefont, textfont, numberfont, animegirl = None):
+    def __init__(self, master, dss, titlefont, textfont, numberfont, animegirl = None):
+        self.dss = dss
         self.init(master, titlefont, textfont, numberfont)
         self.setup(animegirl)
 
@@ -626,9 +627,38 @@ class DSS1main(Application):
         #Workaround
         self.oscrange = 0
         
-        
         self.lastOsc1 = 0
         self.lastOsc2 = 0
+        
+        #keyhandler
+        self.noteOffset = 60
+        self.keys = 'awsedftgyhujkolp'
+        self.keyToNote = dict([(l, idx) for idx, l in enumerate(self.keys)])
+        self.pressedNotes = dict([(l, False) for l in self.keys])
+        master.bind('<KeyPress>', self.keyHandler)
+        master.bind('<KeyRelease>', self.keyHandler)
+
+        
+    def keyHandler(self, event):
+        key = event.keysym.lower()
+        
+        #octave switching
+        if key == 'z' and event.type == '3': self.noteOffset = max(36, self.noteOffset - 12)
+        if key == 'x' and event.type == '3': self.noteOffset = min(84, self.noteOffset + 12)
+        
+        #keyboard playing
+        if key not in self.keys: return
+        
+        if event.type == '2':   #key down
+            if self.pressedNotes[key]: return
+            self.pressedNotes[key] = True
+            self.dss.setNoteOn(self.keyToNote[key] + self.noteOffset)
+            #print(f'note on - {self.keyToNote[key] + self.noteOffset}')
+        elif event.type == '3': #key up
+            self.pressedNotes[key] = False
+            self.dss.setNoteOff(self.keyToNote[key] + self.noteOffset)
+            #print(f'note off - {self.keyToNote[key] + self.noteOffset}')
+
 
     def egUpdate(self, proportional):
 

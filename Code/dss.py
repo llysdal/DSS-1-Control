@@ -426,6 +426,12 @@ class DSS():
 
         midi.sendMidi(self.output, 192, program, 0)
         self.updateGUI = True
+        
+    def setNoteOn(self, note):
+        midi.sendMidi(self.output, 0x90 + 0, note, 0x40)
+
+    def setNoteOff(self, note):
+        midi.sendMidi(self.output, 0x80 + 0, note, 0x00)
 
     def getNameList(self):
         if self.debug: print(f'{self.trans}Request program name list')
