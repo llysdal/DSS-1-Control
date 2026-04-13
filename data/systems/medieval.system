@@ -1,0 +1,4 @@
+pcm \medieval\samples\accordion_medium.wav 0
+pcm \medieval\samples\accordion_high.wav 17275
+mlt \medieval\multisounds\accordion.multi
+pgm \medieval\programs\1_accordion.pgm 1

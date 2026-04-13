@@ -43,6 +43,8 @@ class DSS():
         
         self.operationQueue = []
         self.runningOperation = False
+        self.runningOperationTime = 0
+        self.runningOperationTimeout = 1000
         self.receivedResponse = False
 
         self.pcmIsTransmitting = False
@@ -189,6 +191,12 @@ class DSS():
         self.operationQueue.append(func)
         
     def handleQueue(self):
+        if self.runningOperation and time() > self.runningOperationTime + self.runningOperationTimeout:
+            self.receivedResponse = False
+            self.runningOperation = False
+            if self.debug: print(f'{self.alrt}Timeout')
+            
+        
         if self.receivedResponse or not self.runningOperation:
             self.receivedResponse = False
             self.runningOperation = False
@@ -197,6 +205,7 @@ class DSS():
                 func = self.operationQueue.pop(0)
                 func(self)
                 self.runningOperation = True
+                self.runningOperationTime = time()
             
 
     def lenDecode(self, sysex):
